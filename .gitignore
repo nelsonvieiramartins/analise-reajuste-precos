@@ -1,0 +1,8 @@
+*.xlsx
+*.xls
+*.docx
+*.pdf
+*.zip
+__pycache__/
+*.pyc
+.DS_Store

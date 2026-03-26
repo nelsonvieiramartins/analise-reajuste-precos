@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Financeiro | Clínica Pelegrino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&f[]=general-sans@600,500,400&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Satoshi', 'General Sans', sans-serif;
+      background-color: #F8FAFC;
+      color: #1E293B;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 10px;
+    }
+    .sidebar-link-active {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-left: 4px solid #0EA5E9;
+    }
+    @view-transition {
+      navigation: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#0F172A] text-white flex-shrink-0 hidden lg:flex flex-col border-r border-slate-800 sticky top-0 h-screen">
+      <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+        <div class="w-10 h-10 bg-[#0EA5E9] rounded-xl flex items-center justify-center">
+          <iconify-icon icon="lucide:stethoscope" class="text-white text-2xl"></iconify-icon>
+        </div>
+        <div class="overflow-hidden">
+          <h1 class="text-lg font-bold tracking-tight truncate">Pelegrino</h1>
+          <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Gestão Financeira</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 py-6 px-4 space-y-1">
+        <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Menu Principal</p>
+        <a href="#" id="nav-overview" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors sidebar-link-active">
+          <iconify-icon icon="lucide:layout-dashboard" class="text-lg"></iconify-icon>
+          <span class="text-sm font-medium">Visão Geral</span>
+        </a>
+        <a href="#" id="nav-costs" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors">
+          <iconify-icon icon="lucide:pie-chart" class="text-lg"></iconify-icon>
+          <span class="text-sm font-medium">Análise de Custos</span>
+        </a>
+        <a href="#" id="nav-prices" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors">
+          <iconify-icon icon="lucide:tag" class="text-lg"></iconify-icon>
+          <span class="text-sm font-medium">Tabela de Preços</span>
+        </a>
+        <a href="#" id="nav-reports" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors">
+          <iconify-icon icon="lucide:file-text" class="text-lg"></iconify-icon>
+          <span class="text-sm font-medium">Relatórios</span>
+        </a>
+        
+        <div class="pt-8">
+          <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Suporte</p>
+          <a href="#" id="nav-settings" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors">
+            <iconify-icon icon="lucide:settings" class="text-lg"></iconify-icon>
+            <span class="text-sm font-medium">Configurações</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="p-4 border-t border-slate-800 bg-[#0B1120]">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">JD</div>
+          <div class="flex-1 overflow-hidden">
+            <p class="text-xs font-semibold truncate">Admin Clínica</p>
+            <p class="text-[10px] text-slate-500">admin@pelegrino.com.br</p>
+          </div>
+          <iconify-icon icon="lucide:log-out" class="text-slate-500 hover:text-red-400 cursor-pointer"></iconify-icon>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar">
+      <!-- Header -->
+      <header class="sticky top-0 z-40 bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Dashboard Financeiro</h2>
+          <p class="text-sm text-slate-500">Bem-vindo, acompanhe o desempenho do biênio 2025-2026.</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex flex-col text-right mr-2 border-r border-slate-200 pr-4">
+            <span class="text-xs font-bold text-slate-400 uppercase">Período</span>
+            <span class="text-sm font-semibold text-[#1B3A6B]">Jan/25 — Fev/26</span>
+          </div>
+          <button id="export-btn-header" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-slate-50 transition-all">
+            <iconify-icon icon="lucide:download"></iconify-icon> PDF
+          </button>
+          <button id="refresh-btn" class="bg-[#1B3A6B] text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-[#142d54] transition-all">
+            <iconify-icon icon="lucide:refresh-cw"></iconify-icon> Atualizar
+          </button>
+        </div>
+      </header>
+
+      <div class="p-8 space-y-8 max-w-[1200px] mx-auto w-full">
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-gradient-to-br from-[#1B3A6B] to-[#2563EB] p-6 rounded-2xl shadow-lg shadow-blue-900/10 text-white relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
+              <iconify-icon icon="lucide:trending-up" class="text-8xl"></iconify-icon>
+            </div>
+            <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Faturamento Médio 2025</p>
+            <h3 class="text-2xl font-black">R$ 142.500</h3>
+            <div class="mt-4 flex items-center gap-1.5 text-xs font-bold bg-white/10 w-fit px-2 py-1 rounded-full">
+              <iconify-icon icon="lucide:arrow-up-right"></iconify-icon> +12.4%
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] p-6 rounded-2xl shadow-lg shadow-sky-900/10 text-white relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
+              <iconify-icon icon="lucide:bar-chart-3" class="text-8xl"></iconify-icon>
+            </div>
+            <p class="text-sky-100 text-xs font-bold uppercase tracking-wider mb-1">Projeção Média 2026</p>
+            <h3 class="text-2xl font-black">R$ 158.200</h3>
+            <div class="mt-4 flex items-center gap-1.5 text-xs font-bold bg-white/10 w-fit px-2 py-1 rounded-full">
+              <iconify-icon icon="lucide:zap"></iconify-icon> Meta Batida
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-start mb-4">
+              <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                <iconify-icon icon="lucide:pie-chart" class="text-xl"></iconify-icon>
+              </div>
+              <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded uppercase tracking-tighter">Variação</span>
+            </div>
+            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-wider">Crescimento Operacional</h3>
+            <p class="text-2xl font-black text-slate-800 mt-1">+11,02%</p>
+          </div>
+
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-start mb-4">
+              <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                <iconify-icon icon="lucide:wallet" class="text-xl"></iconify-icon>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-tighter">Saudável</span>
+            </div>
+            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-wider">Margem Líquida</h3>
+            <p class="text-2xl font-black text-slate-800 mt-1">32,4%</p>
+          </div>
+        </div>
+
+        <!-- Charts Section (60/40 Split) -->
+        <div class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+          <div class="lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <iconify-icon icon="lucide:layers" class="text-[#0EA5E9]"></iconify-icon>
+                Custos por Categoria (2025 vs 2026)
+              </h3>
+              <select class="text-xs bg-slate-50 border border-slate-200 px-2 py-1 rounded font-semibold outline-none">
+                <option>Mensal</option>
+                <option>Anual</option>
+              </select>
+            </div>
+            <div class="chart-container">
+              <canvas id="groupedBarChart"></canvas>
+            </div>
+          </div>
+          <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <iconify-icon icon="lucide:percent" class="text-[#0EA5E9]"></iconify-icon>
+              Impacto da Variação (%)
+            </h3>
+            <div class="chart-container">
+              <canvas id="horizontalBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Comparison Table -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <iconify-icon icon="lucide:table" class="text-[#1B3A6B]"></iconify-icon>
+              Detalhamento Comparativo Mensal
+            </h3>
+            <button class="text-blue-600 text-xs font-bold hover:underline">Ver histórico completo</button>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-white border-b border-slate-200 text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                  <th class="p-4">Categoria</th>
+                  <th class="p-4">Jan/25</th>
+                  <th class="p-4">Fev/25</th>
+                  <th class="p-4 bg-slate-50/50">Média 2025</th>
+                  <th class="p-4">Jan/26</th>
+                  <th class="p-4">Fev/26</th>
+                  <th class="p-4 bg-blue-50/50 text-[#1B3A6B]">Média 2026</th>
+                  <th class="p-4 text-right">Var.%</th>
+                </tr>
+              </thead>
+              <tbody class="text-sm text-slate-600">
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                  <td class="p-4 font-bold text-slate-800">Insumos Odontológicos</td>
+                  <td class="p-4">12.450</td><td class="p-4">13.100</td><td class="p-4 bg-slate-50/30">12.775</td>
+                  <td class="p-4">14.200</td><td class="p-4">14.550</td><td class="p-4 bg-blue-50/20 font-semibold text-[#1B3A6B]">14.375</td>
+                  <td class="p-4 text-right font-bold text-red-500">+12.5%</td>
+                </tr>
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                  <td class="p-4 font-bold text-slate-800">Folha de Pagamento</td>
+                  <td class="p-4">45.000</td><td class="p-4">45.000</td><td class="p-4 bg-slate-50/30">45.000</td>
+                  <td class="p-4">49.200</td><td class="p-4">49.200</td><td class="p-4 bg-blue-50/20 font-semibold text-[#1B3A6B]">49.200</td>
+                  <td class="p-4 text-right font-bold text-red-500">+9.3%</td>
+                </tr>
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                  <td class="p-4 font-bold text-slate-800">Marketing Digital</td>
+                  <td class="p-4">5.000</td><td class="p-4">5.000</td><td class="p-4 bg-slate-50/30">5.000</td>
+                  <td class="p-4">6.500</td><td class="p-4">6.500</td><td class="p-4 bg-blue-50/20 font-semibold text-[#1B3A6B]">6.500</td>
+                  <td class="p-4 text-right font-bold text-red-500">+30.0%</td>
+                </tr>
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                  <td class="p-4 font-bold text-slate-800">Impostos e Taxas</td>
+                  <td class="p-4">18.240</td><td class="p-4">19.120</td><td class="p-4 bg-slate-50/30">18.680</td>
+                  <td class="p-4">20.100</td><td class="p-4">20.800</td><td class="p-4 bg-blue-50/20 font-semibold text-[#1B3A6B]">20.450</td>
+                  <td class="p-4 text-right font-bold text-red-500">+9.5%</td>
+                </tr>
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                  <td class="p-4 font-bold text-slate-800">Laboratórios</td>
+                  <td class="p-4">8.900</td><td class="p-4">9.200</td><td class="p-4 bg-slate-50/30">9.050</td>
+                  <td class="p-4">9.800</td><td class="p-4">10.100</td><td class="p-4 bg-blue-50/20 font-semibold text-[#1B3A6B]">9.950</td>
+                  <td class="p-4 text-right font-bold text-red-500">+9.9%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Methodology & Suggested Prices -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          <div class="xl:col-span-4 space-y-6">
+            <div class="bg-[#0F172A] p-6 rounded-2xl text-white">
+              <h3 class="text-lg font-black mb-3">Estratégia de Reajuste</h3>
+              <p class="text-slate-400 text-sm leading-relaxed">
+                Com base no aumento de <span class="text-[#0EA5E9] font-bold">11,02%</span> nos custos, sugerimos um reajuste linear de <span class="text-[#0EA5E9] font-bold">5%</span>.
+              </p>
+              <div class="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                <p class="text-xs font-semibold text-slate-300 mb-2">Fator de Mitigação</p>
+                <div class="w-full bg-slate-700 h-2 rounded-full">
+                  <div class="bg-[#0EA5E9] h-2 rounded-full w-[45%]"></div>
+                </div>
+                <p class="text-[10px] mt-2 text-slate-500 italic">45% da inflação interna será absorvida operacionalmente.</p>
+              </div>
+            </div>
+
+            <div class="bg-sky-50 border border-sky-100 p-6 rounded-2xl">
+              <div class="flex gap-3">
+                <iconify-icon icon="lucide:info" class="text-sky-600 text-xl shrink-0"></iconify-icon>
+                <p class="text-xs text-sky-800 leading-relaxed font-medium">
+                  <strong>Nota:</strong> Excluídos investimentos em infraestrutura extraordinária e pró-labore excedente.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="xl:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-100 bg-white flex justify-between items-center">
+              <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <iconify-icon icon="lucide:tag" class="text-[#0EA5E9]"></iconify-icon>
+                Tabela de Preços Sugeridos (31 Itens)
+              </h3>
+              <div class="flex gap-2">
+                 <button class="p-1.5 hover:bg-slate-100 rounded text-slate-400">
+                   <iconify-icon icon="lucide:search"></iconify-icon>
+                 </button>
+                 <button class="p-1.5 hover:bg-slate-100 rounded text-slate-400">
+                   <iconify-icon icon="lucide:filter"></iconify-icon>
+                 </button>
+              </div>
+            </div>
+            <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                  <tr class="text-slate-500 font-bold uppercase tracking-widest">
+                    <th class="p-4">Procedimento</th>
+                    <th class="p-4">Atual</th>
+                    <th class="p-4">Calc. (+5%)</th>
+                    <th class="p-4 font-black text-slate-800">Sugerido</th>
+                    <th class="p-4 text-right">Diff.</th>
+                  </tr>
+                </thead>
+                <tbody id="priceTableBody" class="divide-y divide-slate-50">
+                  <!-- Data populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="p-8 text-center border-t border-slate-100 mt-auto">
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">&copy; 2024 Clínica Pelegrino &bull; Inteligência de Dados</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const procedures = [
+      {name:"Profilaxia Adulto",current:180},
+      {name:"Restauração Resina (1 face)",current:250},
+      {name:"Restauração Resina (3 faces)",current:420},
+      {name:"Endodontia Unirradicular",current:550},
+      {name:"Endodontia Multirradicular",current:850},
+      {name:"Exodontia Simples",current:220},
+      {name:"Exodontia Terceiro Molar",current:450},
+      {name:"Implante Dentário (Pino)",current:1800},
+      {name:"Coroa Metalocerâmica",current:1200},
+      {name:"Coroa de Zircônia",current:1950},
+      {name:"Clareamento de Consultório",current:1100},
+      {name:"Clareamento Caseiro (Kit)",current:650},
+      {name:"Prótese Protocolo (Arco)",current:9500},
+      {name:"Raspagem Periodontal",current:280},
+      {name:"Gengivectomia (por dente)",current:150},
+      {name:"Aparelho Ortodôntico Autoligado",current:2200},
+      {name:"Manutenção Ortodôntica",current:180},
+      {name:"Frenectomia",current:350},
+      {name:"Facetas de Resina",current:750},
+      {name:"Lentes de Contato (Porcelana)",current:2200},
+      {name:"Avaliação com Câmera Intraoral",current:150},
+      {name:"Radiografia Periapical",current:45},
+      {name:"Cirurgia de Enxerto Ósseo",current:1300},
+      {name:"Placa de Bruxismo (Miorrelaxante)",current:480},
+      {name:"Urgência Odontológica",current:250},
+      {name:"Tratamento de Abscesso",current:320},
+      {name:"Prótese Parcial Removível",current:1650},
+      {name:"Reabilitação Oral Total",current:15000},
+      {name:"Aumento de Coroa Clínica",current:400},
+      {name:"Drenagem de Abscesso",current:180},
+      {name:"Pulpotomia",current:290}
+    ];
+
+    const tableBody = document.getElementById('priceTableBody');
+    procedures.forEach((p, idx) => {
+      const calc = p.current * 1.05;
+      const suggested = Math.ceil(calc / 5) * 5;
+      const diff = suggested - p.current;
+      const row = document.createElement('tr');
+      row.className = idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80 transition-colors' : 'bg-slate-50/40 hover:bg-slate-50 transition-colors';
+      row.innerHTML = `
+        <td class="p-4 font-bold text-slate-800">${p.name}</td>
+        <td class="p-4">R$ ${p.current.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+        <td class="p-4 text-slate-500">R$ ${calc.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+        <td class="p-4 font-black text-slate-900">R$ ${suggested.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+        <td class="p-4 text-right font-bold text-green-600">+ R$ ${diff.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    const categories = ['Materiais','Manut.','Mkt','Folha','Imp','TI','Ener','Lab','Adm'];
+    const ctx1 = document.getElementById('groupedBarChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: categories,
+        datasets: [
+          {
+            label: '2025',
+            data: [12.7, 1.9, 5.0, 45.0, 18.6, 1.2, 2.5, 9.0, 3.3],
+            backgroundColor: '#1B3A6B',
+            borderRadius: 6,
+            barThickness: 12
+          },
+          {
+            label: '2026',
+            data: [14.3, 2.2, 6.5, 49.2, 20.4, 1.3, 2.8, 9.9, 3.5],
+            backgroundColor: '#0EA5E9',
+            borderRadius: 6,
+            barThickness: 12
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'end',
+            labels: { boxWidth: 8, font: { size: 10, weight: '700', family: 'General Sans' } }
+          }
+        },
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            grid: { display: true, color: '#F1F5F9' },
+            ticks: { font: { size: 10 } }
+          },
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+
+    const ctx2 = document.getElementById('horizontalBarChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: categories,
+        datasets: [{
+          label: 'Var %',
+          data: [12.5, 12.6, 30.0, 9.3, 9.5, 12.5, 13.8, 9.9, 7.6],
+          backgroundColor: (ctx) => {
+            const val = ctx.raw;
+            return val > 20 ? '#EF4444' : '#0EA5E9';
+          },
+          borderRadius: 6,
+          barThickness: 14
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { 
+            grid: { color: '#F1F5F9' },
+            ticks: { callback: (v) => v + '%', font: { size: 10 } }
+          },
+          y: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' } } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
