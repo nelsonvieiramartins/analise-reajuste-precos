@@ -167,7 +167,7 @@
           <div>
             <p class="text-amber-300 text-sm font-semibold">Metodologia da análise de precificação</p>
             <p class="text-amber-200/70 text-xs mt-0.5 leading-relaxed">
-              Para o cálculo do reajuste, foram usadas <strong>9 categorias fixas comparáveis</strong> (Jan+Fev 2025×2026).
+              Para o cálculo do reajuste, foram usadas <strong>9 categorias fixas comparáveis</strong> (Jan+Fev+Mar* 2025×2026 — Mar/26 parcial).
               Custos variáveis (Laboratórios, Materiais, Porcentagens) são excluídos da precificação por variarem com o volume de procedimentos.
               Veja os dados completos de todas as 27 categorias na seção <a href="#excluidos" class="text-amber-300 underline hover:text-white">Despesas Completas</a>.
             </p>
@@ -178,25 +178,25 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
           <div class="card-hover bg-gradient-to-br from-[#1B3A6B] to-[#0c2040] rounded-2xl p-5 border border-blue-800/40">
-            <p class="text-slate-400 text-xs font-medium mb-1">Total Comparável 2025</p>
-            <p class="text-white text-2xl font-bold">R$ 25.534</p>
-            <p class="text-slate-400 text-xs mt-1">Bimestral Jan+Fev</p>
-            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">≈ R$ 12.767/mês</p>
+            <p class="text-slate-400 text-xs font-medium mb-1">Média Mensal Comparável 2025</p>
+            <p class="text-white text-2xl font-bold">R$ 12.654</p>
+            <p class="text-slate-400 text-xs mt-1">Q1 Jan+Fev+Mar — 9 categorias</p>
+            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">Total Q1: R$ 36.681</p>
           </div>
 
           <div class="card-hover bg-gradient-to-br from-[#1B3A6B] to-[#0c2040] rounded-2xl p-5 border border-blue-800/40">
-            <p class="text-slate-400 text-xs font-medium mb-1">Total Comparável 2026</p>
-            <p class="text-white text-2xl font-bold">R$ 25.464</p>
-            <p class="text-slate-400 text-xs mt-1">Bimestral Jan+Fev</p>
-            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">≈ R$ 12.732/mês</p>
+            <p class="text-slate-400 text-xs font-medium mb-1">Média Mensal Comparável 2026</p>
+            <p class="text-white text-2xl font-bold">R$ 13.202<span class="text-amber-400 text-sm ml-1">*</span></p>
+            <p class="text-slate-400 text-xs mt-1">Q1 Jan+Fev+Mar* — Mar/26 parcial</p>
+            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">Total Q1: R$ 36.408*</p>
           </div>
 
           <div class="card-hover bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700/40">
             <p class="text-slate-400 text-xs font-medium mb-1">Variação Real (comparável)</p>
-            <p class="text-emerald-400 text-2xl font-bold">-0,28%</p>
-            <p class="text-slate-400 text-xs mt-1">Despesas praticamente estáveis</p>
+            <p class="text-red-400 text-2xl font-bold">+4,33%</p>
+            <p class="text-slate-400 text-xs mt-1">Média mensal Q1 2025 → 2026</p>
             <div class="mt-2 inline-flex items-center gap-1 bg-emerald-500/10 rounded px-2 py-0.5">
-              <span class="text-emerald-400 text-xs font-semibold">✓ Abaixo do IPCA</span>
+              <span class="text-emerald-400 text-xs font-semibold">✓ Abaixo do IPCA (4,83%)</span>
             </div>
           </div>
 
@@ -211,14 +211,14 @@
         <!-- Linha de contexto -->
         <div class="grid grid-cols-3 gap-4 mt-4">
           <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
-            <p class="text-slate-400 text-xs mb-1">Maior alta — Imposto Jurídico</p>
-            <p class="text-red-400 text-xl font-bold">+83,4%</p>
-            <p class="text-slate-500 text-xs mt-1">R$ 646/mês → R$ 1.185/mês</p>
+            <p class="text-slate-400 text-xs mb-1">Maior alta — Mat. Conserv./Limpeza</p>
+            <p class="text-red-400 text-xl font-bold">+111,4%</p>
+            <p class="text-slate-500 text-xs mt-1">R$ 67/mês → R$ 141/mês</p>
           </div>
           <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
-            <p class="text-slate-400 text-xs mb-1">Maior queda — Funcionárias</p>
-            <p class="text-emerald-400 text-xl font-bold">-10,3%</p>
-            <p class="text-slate-500 text-xs mt-1">R$ 5.529/mês → R$ 4.960/mês</p>
+            <p class="text-slate-400 text-xs mb-1">2ª maior alta — Imposto Jurídico</p>
+            <p class="text-red-400 text-xl font-bold">+36,6%</p>
+            <p class="text-slate-500 text-xs mt-1">R$ 727/mês → R$ 993/mês</p>
           </div>
           <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
             <p class="text-slate-400 text-xs mb-1">IPCA acumulado 2025</p>
@@ -241,7 +241,7 @@
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h3 class="text-white font-semibold text-sm">Média Mensal por Categoria</h3>
-                <p class="text-slate-400 text-xs mt-0.5">Média de Jan+Fev — 2025 × 2026 (R$)</p>
+                <p class="text-slate-400 text-xs mt-0.5">Média Mensal Q1 Jan+Fev+Mar* — 2025 × 2026 (R$)</p>
               </div>
               <div class="flex items-center gap-4 text-xs">
                 <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#1B3A6B] inline-block"></span>2025</span>
@@ -270,7 +270,7 @@
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-white font-semibold text-sm">Total Mensal de Despesas Comparáveis</h3>
-              <p class="text-slate-400 text-xs mt-0.5">Evolução mês a mês — Jan/25, Fev/25, Jan/26, Fev/26</p>
+              <p class="text-slate-400 text-xs mt-0.5">Evolução mês a mês — Jan/25, Fev/25, Mar/25, Jan/26, Fev/26, Mar/26* <span class="text-amber-400">* mês parcial</span></p>
             </div>
           </div>
           <div style="height: 200px; position: relative;">
@@ -287,7 +287,7 @@
 
         <div class="bg-slate-800/50 rounded-2xl border border-slate-700/40 overflow-hidden">
           <div class="px-6 py-4 border-b border-slate-700/40 flex items-center justify-between">
-            <p class="text-white font-semibold text-sm">9 categorias fixas comparáveis — base da análise de precificação</p>
+            <p class="text-white font-semibold text-sm">9 categorias fixas comparáveis — Jan+Fev+Mar* 2025 × 2026 <span class="text-amber-400 font-normal text-xs">(Mar/26 parcial)</span></p>
             <p class="text-slate-400 text-xs">Valores em R$</p>
           </div>
           <div class="overflow-x-auto">
@@ -297,10 +297,12 @@
                   <th class="text-left px-5 py-3">Categoria</th>
                   <th class="text-right px-4 py-3">Jan/25</th>
                   <th class="text-right px-4 py-3">Fev/25</th>
-                  <th class="text-right px-4 py-3 bg-blue-900/20">Média/25</th>
+                  <th class="text-right px-4 py-3 text-slate-500">Mar/25</th>
+                  <th class="text-right px-4 py-3 bg-blue-900/20">Méd/25</th>
                   <th class="text-right px-4 py-3">Jan/26</th>
                   <th class="text-right px-4 py-3">Fev/26</th>
-                  <th class="text-right px-4 py-3 bg-sky-900/20">Média/26</th>
+                  <th class="text-right px-4 py-3 text-amber-400/80">Mar/26*</th>
+                  <th class="text-right px-4 py-3 bg-sky-900/20">Méd/26</th>
                   <th class="text-right px-4 py-3">Var. R$</th>
                   <th class="text-right px-4 py-3">Var. %</th>
                 </tr>
@@ -311,13 +313,15 @@
                   <td class="px-5 py-3.5">TOTAL GERAL</td>
                   <td class="text-right px-4 py-3.5">R$ 12.619</td>
                   <td class="text-right px-4 py-3.5">R$ 12.916</td>
-                  <td class="text-right px-4 py-3.5 bg-blue-900/20">R$ 12.767</td>
-                  <td class="text-right px-4 py-3.5">R$ 12.054</td>
+                  <td class="text-right px-4 py-3.5 text-slate-400 font-normal">R$ 11.147</td>
+                  <td class="text-right px-4 py-3.5 bg-blue-900/20">R$ 12.654</td>
+                  <td class="text-right px-4 py-3.5">R$ 14.254</td>
                   <td class="text-right px-4 py-3.5">R$ 13.410</td>
-                  <td class="text-right px-4 py-3.5 bg-sky-900/20">R$ 12.732</td>
-                  <td class="text-right px-4 py-3.5 text-emerald-400">-R$ 35</td>
+                  <td class="text-right px-4 py-3.5 text-amber-400/80 font-normal">R$ 8.744*</td>
+                  <td class="text-right px-4 py-3.5 bg-sky-900/20">R$ 13.202</td>
+                  <td class="text-right px-4 py-3.5 text-red-400">+R$ 548</td>
                   <td class="text-right px-4 py-3.5">
-                    <span class="tag-flat text-xs font-bold px-2 py-0.5 rounded">-0,28%</span>
+                    <span class="tag-high text-xs font-bold px-2 py-0.5 rounded">+4,33%</span>
                   </td>
                 </tr>
               </tfoot>
@@ -912,24 +916,29 @@
   // ============================================================
   // DADOS REAIS — 9 CATEGORIAS COMPARÁVEIS
   // ============================================================
+  // DADOS: 9 categorias comparáveis — inclui Jan+Fev+Mar (Mar* = parcial, mês não fechado)
   const DADOS = [
-    { cat: "Aluguel",                    j25: 3050.68, f25: 3006.00, j26: 3007.72, f26: 2969.58 },
-    { cat: "Contabilidade",              j25: 1214.40, f25: 1214.00, j26: 1214.40, f26: 1296.86 },
-    { cat: "Empréstimo Jurídico",        j25: 1854.00, f25: 1854.00, j26: 1766.00, f26: 1766.00 },
-    { cat: "Telefone",                   j25:  182.09, f25:  211.74, j26:  296.45, f26:   57.50 },
-    { cat: "Codental (Sistema)",         j25:  160.90, f25:  114.90, j26:  128.90, f26:  128.90 },
-    { cat: "CHB Ambiental",              j25:   95.65, f25:   93.75, j26:  101.17, f26:  101.27 },
-    { cat: "Imposto Jurídico",           j25:  583.49, f25:  708.05, j26: 1249.95, f26: 1119.07 },
-    { cat: "Desp. Funcionárias",         j25: 5440.59, f25: 5616.92, j26: 4050.16, f26: 5869.27 },
-    { cat: "Material Conserv./Limpeza",  j25:   37.15, f25:   96.30, j26:  239.58, f26:  101.07 },
+    { cat: "Aluguel",                    j25: 3050.68, f25: 3006.00, mar25: 3006.00, j26: 3007.72, f26: 2969.58, mar26: 2069.58 },
+    { cat: "Contabilidade",              j25: 1214.40, f25: 1214.00, mar25:    0.00, j26: 1214.40, f26: 1296.86, mar26:    0.00 },
+    { cat: "Empréstimo Jurídico",        j25: 1854.00, f25: 1854.00, mar25: 1854.00, j26: 1766.00, f26: 1766.00, mar26:    0.00 },
+    { cat: "Telefone",                   j25:  182.09, f25:  211.74, mar25:   40.84, j26:  296.45, f26:   57.50, mar26:    0.00 },
+    { cat: "Codental (Sistema)",         j25:  160.90, f25:  114.90, mar25:  114.90, j26:  128.90, f26:  128.90, mar26:  128.90 },
+    { cat: "CHB Ambiental",              j25:   95.65, f25:   93.75, mar25:   93.75, j26:  101.17, f26:  101.27, mar26:  101.27 },
+    { cat: "Imposto Jurídico",           j25:  583.49, f25:  708.05, mar25:  888.67, j26: 1249.95, f26: 1119.07, mar26:  608.52 },
+    { cat: "Desp. Funcionárias",         j25: 5440.59, f25: 5616.92, mar25: 5148.56, j26: 6250.16, f26: 5869.27, mar26: 5753.27 },
+    { cat: "Material Conserv./Limpeza",  j25:   37.15, f25:   96.30, mar25:    0.00, j26:  239.58, f26:  101.07, mar26:   82.62 },
   ];
 
-  // Calcular médias e variações
+  // Calcular médias Q1 (apenas meses com valor > 0) e totais trimestrais
   DADOS.forEach(d => {
-    d.m25 = (d.j25 + d.f25) / 2;
-    d.m26 = (d.j26 + d.f26) / 2;
-    d.varR = d.m26 - d.m25;
-    d.varP = (d.m26 / d.m25 - 1) * 100;
+    const vs25 = [d.j25, d.f25, d.mar25].filter(v => v > 0);
+    const vs26 = [d.j26, d.f26, d.mar26].filter(v => v > 0);
+    d.avg25 = vs25.length ? vs25.reduce((a,b)=>a+b,0)/vs25.length : 0;
+    d.avg26 = vs26.length ? vs26.reduce((a,b)=>a+b,0)/vs26.length : 0;
+    d.q125  = d.j25 + d.f25 + d.mar25;
+    d.q126  = d.j26 + d.f26 + d.mar26;
+    d.varR  = d.avg26 - d.avg25;
+    d.varP  = d.avg25 > 0 ? (d.avg26 / d.avg25 - 1) * 100 : 0;
   });
 
   // ============================================================
@@ -949,10 +958,12 @@
         <td class="px-5 py-3 font-medium text-slate-200">${d.cat}</td>
         <td class="text-right px-4 py-3 text-slate-300">${brl(d.j25)}</td>
         <td class="text-right px-4 py-3 text-slate-300">${brl(d.f25)}</td>
-        <td class="text-right px-4 py-3 bg-blue-900/10 font-semibold text-white">${brl(d.m25)}</td>
+        <td class="text-right px-4 py-3 text-slate-500 text-[11px]">${d.mar25 > 0 ? brl(d.mar25) : '—'}</td>
+        <td class="text-right px-4 py-3 bg-blue-900/10 font-semibold text-white">${brl(d.avg25)}</td>
         <td class="text-right px-4 py-3 text-slate-300">${brl(d.j26)}</td>
         <td class="text-right px-4 py-3 text-slate-300">${brl(d.f26)}</td>
-        <td class="text-right px-4 py-3 bg-sky-900/10 font-semibold text-white">${brl(d.m26)}</td>
+        <td class="text-right px-4 py-3 text-amber-400/80 text-[11px]">${d.mar26 > 0 ? brl(d.mar26)+'*' : '—'}</td>
+        <td class="text-right px-4 py-3 bg-sky-900/10 font-semibold text-white">${brl(d.avg26)}</td>
         <td class="text-right px-4 py-3 ${varColor} font-medium">${sinal}${brl(d.varR)}</td>
         <td class="text-right px-4 py-3">
           <span class="${tagClass} text-xs font-bold px-2 py-0.5 rounded">${sinal}${d.varP.toFixed(1)}%</span>
@@ -1421,15 +1432,15 @@
       labels: labelscat,
       datasets: [
         {
-          label: '2025 (Média)',
-          data: DADOS.map(d => Math.round(d.m25)),
+          label: '2025 (Méd. Q1)',
+          data: DADOS.map(d => Math.round(d.avg25)),
           backgroundColor: '#1B3A6B',
           borderRadius: 4,
           borderSkipped: false,
         },
         {
-          label: '2026 (Média)',
-          data: DADOS.map(d => Math.round(d.m26)),
+          label: '2026 (Méd. Q1)',
+          data: DADOS.map(d => Math.round(d.avg26)),
           backgroundColor: '#0EA5E9',
           borderRadius: 4,
           borderSkipped: false,
@@ -1517,10 +1528,12 @@
   // GRÁFICO 3 — TOTAIS MENSAIS
   // ============================================================
   const totaisMensais = {
-    'Jan/25': DADOS.reduce((s, d) => s + d.j25, 0),
-    'Fev/25': DADOS.reduce((s, d) => s + d.f25, 0),
-    'Jan/26': DADOS.reduce((s, d) => s + d.j26, 0),
-    'Fev/26': DADOS.reduce((s, d) => s + d.f26, 0),
+    'Jan/25':   DADOS.reduce((s, d) => s + d.j25,   0),
+    'Fev/25':   DADOS.reduce((s, d) => s + d.f25,   0),
+    'Mar/25':   DADOS.reduce((s, d) => s + d.mar25,  0),
+    'Jan/26':   DADOS.reduce((s, d) => s + d.j26,   0),
+    'Fev/26':   DADOS.reduce((s, d) => s + d.f26,   0),
+    'Mar/26 *': DADOS.reduce((s, d) => s + d.mar26,  0),
   };
 
   new Chart(document.getElementById('chartMensal'), {
@@ -1530,7 +1543,7 @@
       datasets: [{
         label: 'Total Comparável',
         data: Object.values(totaisMensais).map(v => Math.round(v)),
-        backgroundColor: ['#1B3A6B', '#1B3A6B', '#0EA5E9', '#0EA5E9'],
+        backgroundColor: ['#1B3A6B', '#1B3A6B', '#1B3A6B80', '#0EA5E9', '#0EA5E9', '#f59e0b80'],
         borderRadius: 6,
         borderSkipped: false,
       }]
@@ -1558,7 +1571,7 @@
             font: { size: 10 },
             callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k'
           },
-          min: 10000,
+          min: 0,
         }
       }
     }
