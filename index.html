@@ -71,6 +71,94 @@
     .tipo-variavel   { background: rgba(239,68,68,0.15);  color: #f87171; }
     .tipo-outros     { background: rgba(148,163,184,0.1); color: #94a3b8; }
     .precif-badge    { background: rgba(14,165,233,0.2);  color: #0EA5E9; font-size:10px; padding:1px 5px; border-radius:4px; }
+    /* Tooltips */
+    .tip-wrap { position: relative; display: inline-flex; align-items: center; }
+    .tip-icon { color: #475569; font-size: 12px; cursor: help; line-height: 1; transition: color 0.15s; }
+    .tip-icon:hover { color: #94a3b8; }
+    .tip-box {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 12px;
+      width: 230px;
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      z-index: 200;
+      pointer-events: none;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      white-space: normal;
+    }
+    .tip-box::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #334155;
+    }
+    .tip-wrap:hover .tip-box { display: block; }
+
+    /* ── Sidebar retrátil ── */
+    #sidebar {
+      transition: width 0.25s ease;
+      overflow: hidden;
+    }
+    #sidebar.collapsed { width: 48px; }
+    #mainContent { transition: margin-left 0.25s ease; }
+    #mainContent.expanded { margin-left: 48px; }
+
+    /* Esconde textos quando recolhido */
+    #sidebar.collapsed .nav-label  { display: none; }
+    #sidebar.collapsed .logo-text  { display: none; }
+    #sidebar.collapsed .footer-text { display: none; }
+
+    /* Links centralizados com ícones */
+    #sidebar.collapsed .sidebar-link {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+      gap: 0;
+    }
+    #sidebar.collapsed .nav-section-label {
+      overflow: hidden;
+      height: 0;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Botão de toggle */
+    #sidebarToggle {
+      transition: transform 0.25s ease, background 0.15s;
+    }
+    #sidebar.collapsed #sidebarToggle { transform: rotate(180deg); }
+
+    /* Tooltip de item no estado recolhido */
+    .nav-item-wrap { position: relative; }
+    #sidebar.collapsed .nav-item-tip {
+      display: none;
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #e2e8f0;
+      white-space: nowrap;
+      z-index: 300;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    #sidebar.collapsed .nav-item-wrap:hover .nav-item-tip { display: block; }
   </style>
 </head>
 <body class="bg-[#0F172A] text-white min-h-screen flex">
@@ -78,58 +166,88 @@
   <!-- ============================================================
        SIDEBAR
   ============================================================ -->
-  <aside class="no-print w-56 min-h-screen bg-[#0F172A] border-r border-slate-700/50 flex flex-col fixed top-0 left-0 z-40">
-    <!-- Logo -->
-    <div class="p-5 border-b border-slate-700/50">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0EA5E9] to-[#1B3A6B] flex items-center justify-center text-white font-bold text-sm">CP</div>
-        <div>
-          <p class="text-white font-bold text-sm leading-tight">Clínica Pelegrino</p>
-          <p class="text-slate-400 text-[10px] uppercase tracking-wider">Gestão Financeira</p>
+  <aside id="sidebar" class="no-print w-56 min-h-screen bg-[#0F172A] border-r border-slate-700/50 flex flex-col fixed top-0 left-0 z-40">
+    <!-- Logo + toggle -->
+    <div class="p-4 border-b border-slate-700/50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 shrink-0 rounded-lg bg-gradient-to-br from-[#0EA5E9] to-[#1B3A6B] flex items-center justify-center text-white font-bold text-sm">CP</div>
+          <div class="logo-text min-w-0">
+            <p class="text-white font-bold text-sm leading-tight whitespace-nowrap">Clínica Pelegrino</p>
+            <p class="text-slate-400 text-[10px] uppercase tracking-wider whitespace-nowrap">Gestão Financeira</p>
+          </div>
         </div>
+        <button id="sidebarToggle" onclick="toggleSidebar()"
+          class="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 text-xs ml-1">
+          &#8249;
+        </button>
       </div>
     </div>
 
     <!-- Nav -->
     <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
-      <p class="text-slate-500 text-[10px] font-semibold uppercase tracking-widest px-3 pt-3 pb-1">Análise</p>
+      <p class="nav-section-label text-slate-500 text-[10px] font-semibold uppercase tracking-widest px-3 pt-3 pb-1">Análise</p>
+      <div class="nav-item-wrap">
       <a href="#resumo" class="sidebar-link active flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-200">
-        <span class="text-[#0EA5E9]">⬛</span> Resumo Executivo
+        <span class="text-[#0EA5E9]">⬛</span><span class="nav-label"> Resumo Executivo</span>
       </a>
+      <div class="nav-item-tip">Resumo Executivo</div>
+      </div>
+      <div class="nav-item-wrap">
       <a href="#comparativo" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>📊</span> Comparativo
+        <span>📊</span><span class="nav-label"> Comparativo</span>
       </a>
+      <div class="nav-item-tip">Comparativo</div>
+      </div>
+      <div class="nav-item-wrap">
       <a href="#detalhes" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>📋</span> Detalhamento
+        <span>📋</span><span class="nav-label"> Detalhamento</span>
       </a>
+      <div class="nav-item-tip">Detalhamento</div>
+      </div>
+      <div class="nav-item-wrap">
       <a href="#excluidos" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>📊</span> Desp. Completas
+        <span>📊</span><span class="nav-label"> Desp. Completas</span>
       </a>
-      <p class="text-slate-500 text-[10px] font-semibold uppercase tracking-widest px-3 pt-4 pb-1">Precificação</p>
+      <div class="nav-item-tip">Desp. Completas</div>
+      </div>
+      <p class="nav-section-label text-slate-500 text-[10px] font-semibold uppercase tracking-widest px-3 pt-4 pb-1">Precificação</p>
+      <div class="nav-item-wrap">
       <a href="#metodologia" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>🧮</span> Metodologia
+        <span>🧮</span><span class="nav-label"> Metodologia</span>
       </a>
+      <div class="nav-item-tip">Metodologia</div>
+      </div>
+      <div class="nav-item-wrap">
       <a href="#simulacao" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>🎮</span> Simulador
+        <span>🎮</span><span class="nav-label"> Simulador</span>
       </a>
+      <div class="nav-item-tip">Simulador</div>
+      </div>
+      <div class="nav-item-wrap">
       <a href="#faturamento" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>📈</span> Faturamento Simulado
+        <span>📈</span><span class="nav-label"> Faturamento Simulado</span>
       </a>
+      <div class="nav-item-tip">Faturamento Simulado</div>
+      </div>
+      <div class="nav-item-wrap">
       <a href="#tabela" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
-        <span>💰</span> Tabela de Preços
+        <span>💰</span><span class="nav-label"> Tabela de Preços</span>
       </a>
+      <div class="nav-item-tip">Tabela de Preços</div>
+      </div>
     </nav>
 
     <!-- Footer -->
     <div class="p-4 border-t border-slate-700/50">
-      <p class="text-slate-500 text-[10px] text-center">Jan-Mar 2025 × Jan-Mar 2026</p>
+      <p class="footer-text text-slate-500 text-[10px] text-center">Jan-Mar 2025 × Jan-Mar 2026</p>
     </div>
   </aside>
 
   <!-- ============================================================
        MAIN CONTENT
   ============================================================ -->
-  <main class="ml-56 flex-1 min-h-screen bg-[#0F172A]">
+  <main id="mainContent" class="ml-56 flex-1 min-h-screen bg-[#0F172A]">
 
     <!-- Top header -->
     <header class="sticky top-0 z-30 bg-[#0F172A]/95 backdrop-blur border-b border-slate-700/50 px-8 py-4 flex items-center justify-between">
@@ -178,21 +296,39 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
           <div class="card-hover bg-gradient-to-br from-[#1B3A6B] to-[#0c2040] rounded-2xl p-5 border border-blue-800/40">
-            <p class="text-slate-400 text-xs font-medium mb-1">Média Mensal Comparável 2025</p>
+            <div class="flex items-center gap-1.5 mb-1">
+              <p class="text-slate-400 text-xs font-medium">Média Mensal Comparável 2025</p>
+              <div class="tip-wrap">
+                <span class="tip-icon">ⓘ</span>
+                <div class="tip-box">Média das despesas mensais das <strong>9 categorias fixas comparáveis</strong> no Q1 2025 (Jan, Fev, Mar). Calculado apenas com os meses que têm lançamentos registrados.</div>
+              </div>
+            </div>
             <p class="text-white text-2xl font-bold">R$ 12.654</p>
             <p class="text-slate-400 text-xs mt-1">Q1 Jan+Fev+Mar — 9 categorias</p>
             <p class="text-[#0EA5E9] text-xs font-semibold mt-2">Total Q1: R$ 36.681</p>
           </div>
 
           <div class="card-hover bg-gradient-to-br from-[#1B3A6B] to-[#0c2040] rounded-2xl p-5 border border-blue-800/40">
-            <p class="text-slate-400 text-xs font-medium mb-1">Média Mensal Comparável 2026</p>
+            <div class="flex items-center gap-1.5 mb-1">
+              <p class="text-slate-400 text-xs font-medium">Média Mensal Comparável 2026</p>
+              <div class="tip-wrap">
+                <span class="tip-icon">ⓘ</span>
+                <div class="tip-box">Média das despesas mensais das <strong>9 categorias fixas comparáveis</strong> no Q1 2026. <span class="text-amber-400 font-semibold">Mar/26 ainda não fechou</span> — o valor de março é parcial e pode crescer até o fechamento do mês.</div>
+              </div>
+            </div>
             <p class="text-white text-2xl font-bold">R$ 13.202<span class="text-amber-400 text-sm ml-1">*</span></p>
             <p class="text-slate-400 text-xs mt-1">Q1 Jan+Fev+Mar* — Mar/26 parcial</p>
             <p class="text-[#0EA5E9] text-xs font-semibold mt-2">Total Q1: R$ 36.408*</p>
           </div>
 
           <div class="card-hover bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700/40">
-            <p class="text-slate-400 text-xs font-medium mb-1">Variação Real (comparável)</p>
+            <div class="flex items-center gap-1.5 mb-1">
+              <p class="text-slate-400 text-xs font-medium">Variação Real (comparável)</p>
+              <div class="tip-wrap">
+                <span class="tip-icon">ⓘ</span>
+                <div class="tip-box">Variação percentual da <strong>média mensal</strong> das 9 categorias fixas entre 2025 e 2026. É a base para definir o reajuste necessário: se as despesas subiram menos que o IPCA, o índice oficial é o critério de reajuste.</div>
+              </div>
+            </div>
             <p class="text-red-400 text-2xl font-bold">+4,33%</p>
             <p class="text-slate-400 text-xs mt-1">Média mensal Q1 2025 → 2026</p>
             <div class="mt-2 inline-flex items-center gap-1 bg-emerald-500/10 rounded px-2 py-0.5">
@@ -201,7 +337,13 @@
           </div>
 
           <div class="card-hover bg-gradient-to-br from-[#0EA5E9]/20 to-[#0EA5E9]/5 rounded-2xl p-5 border border-[#0EA5E9]/30">
-            <p class="text-slate-400 text-xs font-medium mb-1">Reajuste Recomendado</p>
+            <div class="flex items-center gap-1.5 mb-1">
+              <p class="text-slate-400 text-xs font-medium">Reajuste Recomendado</p>
+              <div class="tip-wrap">
+                <span class="tip-icon">ⓘ</span>
+                <div class="tip-box">Reajuste sugerido para a <strong>tabela de preços</strong> da clínica. Como a variação real das despesas (+4,33%) ficou abaixo do IPCA 2025 (4,83%), recomendamos aplicar o índice oficial. Use o simulador para testar outros percentuais.</div>
+              </div>
+            </div>
             <p class="text-[#0EA5E9] text-2xl font-bold">5,0%</p>
             <p class="text-slate-400 text-xs mt-1">Baseado no IPCA 2025</p>
             <p class="text-[#0EA5E9] text-xs font-semibold mt-2">Despesas < IPCA = reajuste pelo índice</p>
@@ -1576,6 +1718,25 @@
       }
     }
   });
+
+  // ============================================================
+  // SIDEBAR TOGGLE
+  // ============================================================
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const mc = document.getElementById('mainContent');
+    sb.classList.toggle('collapsed');
+    mc.classList.toggle('expanded');
+    // Persiste estado na sessão
+    sessionStorage.setItem('sidebarCollapsed', sb.classList.contains('collapsed') ? '1' : '0');
+  }
+  // Restaura estado da sessão
+  (function() {
+    if (sessionStorage.getItem('sidebarCollapsed') === '1') {
+      document.getElementById('sidebar').classList.add('collapsed');
+      document.getElementById('mainContent').classList.add('expanded');
+    }
+  })();
 
   // ============================================================
   // SIDEBAR SCROLL SPY
