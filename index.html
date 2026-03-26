@@ -6,6 +6,7 @@
   <title>Dashboard de Despesas – Clínica Pelegrino</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { font-family: 'Inter', sans-serif; }
@@ -1096,6 +1097,17 @@
        SCRIPTS
   ============================================================ -->
   <script>
+  // ══════════════════════════════════════════════════════════════
+  // SUPABASE — banco de dados compartilhado
+  // Preencha com as credenciais do seu projeto em supabase.com
+  // ══════════════════════════════════════════════════════════════
+  const SUPABASE_URL = 'https://jjaqejsevvtxgtudvczn.supabase.co';  // ← edite
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXFlanNldnZ0eGd0dWR2Y3puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NDYwNTYsImV4cCI6MjA5MDEyMjA1Nn0.PCnjyDW2a7mGROr522DSw6zbwer7Ba9ADX3GorWBs-U';                // ← edite
+  const _sb = (typeof supabase !== 'undefined' &&
+               !SUPABASE_URL.includes('SEU_PROJETO'))
+    ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+    : null;
+
   // ============================================================
   // DADOS REAIS — 9 CATEGORIAS COMPARÁVEIS
   // ============================================================
@@ -1593,21 +1605,46 @@
     atualizarSimulador(pct);
   }
 
-  // Inicializar simulador — restaura último percentual salvo (localStorage)
-  (function () {
+  // Inicializar simulador — busca percentual do Supabase ou localStorage
+  (async function () {
     let initPct = 5;
-    try {
-      const saved = localStorage.getItem('cpReajuste');
-      if (saved) {
-        const obj = JSON.parse(saved);
-        if (typeof obj.pct === 'number') initPct = obj.pct;
-      }
-    } catch (e) { /* usa padrão 5% */ }
+
+    // 1. Tenta buscar do Supabase (fonte de verdade compartilhada)
+    if (_sb) {
+      try {
+        const { data, error } = await _sb
+          .from('config')
+          .select('value')
+          .eq('key', 'reajuste')
+          .maybeSingle();
+        if (!error && data?.value?.pct != null) {
+          initPct = data.value.pct;
+          // Sincroniza cache local
+          localStorage.setItem('cpReajuste', JSON.stringify({
+            pct: initPct,
+            data: data.value.saved_at || new Date().toISOString()
+          }));
+        }
+      } catch (e) { /* fallback abaixo */ }
+    }
+
+    // 2. Fallback: cache localStorage
+    if (initPct === 5) {
+      try {
+        const saved = localStorage.getItem('cpReajuste');
+        if (saved) {
+          const obj = JSON.parse(saved);
+          if (typeof obj.pct === 'number') initPct = obj.pct;
+        }
+      } catch (e) {}
+    }
+
     const slider = document.getElementById('sliderSim');
     const input  = document.getElementById('inputSimNum');
     if (slider) slider.value = Math.min(initPct, 30);
     if (input)  input.value  = initPct;
     atualizarSimulador(initPct);
+    updateSavedBadge();
   })();
 
   // ============================================================
@@ -1779,14 +1816,36 @@
   // ============================================================
   // REAJUSTE DEFINITIVO — salva no localStorage para tabela.html
   // ============================================================
-  function salvarReajuste() {
-    const obj = { pct: simPct, data: new Date().toISOString() };
-    localStorage.setItem('cpReajuste', JSON.stringify(obj));
+  async function salvarReajuste() {
+    const now = new Date().toISOString();
+    const payload = { pct: simPct, saved_at: now };
+    let sbOk = false;
+
+    // Salva no Supabase (banco compartilhado)
+    if (_sb) {
+      try {
+        const { error } = await _sb.from('config').upsert({
+          key: 'reajuste',
+          value: payload,
+          updated_at: now
+        });
+        if (!error) sbOk = true;
+      } catch (e) { /* fallback local */ }
+    }
+
+    // Sempre atualiza o cache local
+    localStorage.setItem('cpReajuste', JSON.stringify({ pct: simPct, data: now }));
     updateSavedBadge();
+
     const msg = document.getElementById('savedMsg');
     if (msg) {
+      msg.textContent = sbOk
+        ? '✓ Salvo no banco! A secretaria já pode consultar a tabela.'
+        : (_sb
+           ? '⚠ Erro ao salvar no banco. Verifique a conexão.'
+           : '✓ Salvo localmente. Configure o Supabase para compartilhar.');
       msg.classList.remove('hidden');
-      setTimeout(() => msg.classList.add('hidden'), 3500);
+      setTimeout(() => msg.classList.add('hidden'), 4500);
     }
   }
 
@@ -1796,12 +1855,13 @@
     try {
       const saved = localStorage.getItem('cpReajuste');
       if (saved) {
-        const obj = JSON.parse(saved);
-        const d   = new Date(obj.data);
+        const obj   = JSON.parse(saved);
+        const d     = new Date(obj.data);
+        const fonte = _sb ? ' ☁' : ' (local)';
         badge.textContent = 'Salvo: ' + obj.pct.toFixed(1).replace('.', ',') +
-          '% em ' + d.toLocaleDateString('pt-BR');
+          '% em ' + d.toLocaleDateString('pt-BR') + fonte;
       } else {
-        badge.textContent = 'Nenhum salvo ainda';
+        badge.textContent = _sb ? 'Nenhum salvo no banco' : 'Nenhum salvo ainda';
       }
     } catch (e) {}
   }

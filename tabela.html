@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tabela de Preços — Clínica Pelegrino</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
@@ -75,6 +76,7 @@
       <!-- Badge reajuste -->
       <div class="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-700/40
                   rounded-lg px-3 py-1.5 shrink-0">
+        <span id="syncStatus" class="hidden text-yellow-400 text-xs animate-pulse">⟳</span>
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
         <span class="text-emerald-300 text-xs font-semibold" id="badgePct">5,0%</span>
         <span class="text-slate-500 text-xs" id="badgeData"></span>
@@ -234,16 +236,13 @@
     let reajusteData = null;
     let filtroAtivo  = 'todos';
 
-    (function initState() {
-      try {
-        const saved = localStorage.getItem('cpReajuste');
-        if (saved) {
-          const obj   = JSON.parse(saved);
-          reajustePct  = (typeof obj.pct === 'number') ? obj.pct : 5;
-          reajusteData = obj.data ? new Date(obj.data) : null;
-        }
-      } catch (e) { /* usa padrão 5% */ }
-    })();
+    // ── Supabase client ──────────────────────────────────────
+    const SUPABASE_URL = 'https://jjaqejsevvtxgtudvczn.supabase.co'; // ← edite
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXFlanNldnZ0eGd0dWR2Y3puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NDYwNTYsImV4cCI6MjA5MDEyMjA1Nn0.PCnjyDW2a7mGROr522DSw6zbwer7Ba9ADX3GorWBs-U';               // ← edite
+    const _sb = (typeof supabase !== 'undefined' &&
+                 !SUPABASE_URL.includes('SEU_PROJETO'))
+      ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+      : null;
 
     // ============================================================
     // RENDERIZAR TABELA
@@ -363,9 +362,47 @@
     }
 
     // ============================================================
-    // INIT
-    // ============================================================
-    updateDisplay();
+    // ── INIT — carrega do Supabase (ou localStorage como fallback) ──
+    (async function () {
+      // 1. Mostra imediatamente o cache local (sem latência)
+      try {
+        const cache = localStorage.getItem('cpReajuste');
+        if (cache) {
+          const obj = JSON.parse(cache);
+          if (typeof obj.pct === 'number') {
+            reajustePct  = obj.pct;
+            reajusteData = obj.data ? new Date(obj.data) : null;
+          }
+        }
+      } catch (_) {}
+      updateDisplay(); // exibe enquanto busca no servidor
+
+      // 2. Busca a versão mais recente no Supabase (fonte de verdade)
+      if (_sb) {
+        const sync = document.getElementById('syncStatus');
+        if (sync) sync.classList.remove('hidden');
+        try {
+          const { data, error } = await _sb
+            .from('config')
+            .select('value')
+            .eq('key', 'reajuste')
+            .maybeSingle();
+          if (!error && data?.value?.pct != null) {
+            reajustePct  = data.value.pct;
+            reajusteData = data.value.saved_at
+              ? new Date(data.value.saved_at)
+              : null;
+            // Atualiza cache local
+            localStorage.setItem('cpReajuste', JSON.stringify({
+              pct: reajustePct,
+              data: data.value.saved_at
+            }));
+            updateDisplay(); // atualiza com dados do servidor
+          }
+        } catch (e) { /* mantém cache local */ }
+        if (sync) sync.classList.add('hidden');
+      }
+    })();
   </script>
 </body>
 </html>
