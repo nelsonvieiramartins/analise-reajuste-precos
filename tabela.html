@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tabela de Preços — Clínica Pelegrino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; }
+
+    /* ── Print / A4 ── */
+    @page { size: A4 portrait; margin: 12mm 15mm; }
+    @media print {
+      .no-print  { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white !important; color: #1e293b !important;
+             -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .main-card { background: white !important; border: none !important;
+                   box-shadow: none !important; border-radius: 0 !important; }
+      table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
+      tr    { page-break-inside: avoid; page-break-after: auto; }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      th { background: #f1f5f9 !important; color: #475569 !important;
+           border-bottom: 2px solid #cbd5e1 !important; padding: 6px 10px !important; }
+      td { color: #1e293b !important; border-bottom: 1px solid #e2e8f0 !important;
+           padding: 5px 10px !important; }
+      .novo-preco { color: #059669 !important; font-weight: 700 !important; }
+      .group-hdr td { background: #f1f5f9 !important; color: #64748b !important;
+                      font-size: 9px !important; font-weight: 600 !important;
+                      text-transform: uppercase; letter-spacing: 0.08em; }
+      .tfoot-row td { background: #f8fafc !important; font-weight: 700 !important;
+                      border-top: 2px solid #94a3b8 !important;
+                      color: #1e293b !important; }
+    }
+    .print-only { display: none; }
+    .highlight   { background: rgba(234,179,8,0.3); border-radius: 2px; padding: 0 1px; }
+    .btn-filtro  { background: #334155; color: #94a3b8; cursor: pointer; }
+    .btn-filtro:hover { background: #475569; }
+    .btn-filtro.ativo { background: #0EA5E9; color: white; }
+  </style>
+</head>
+<body class="bg-[#0F172A] text-slate-200 min-h-screen">
+
+  <!-- ═══ CABEÇALHO DE IMPRESSÃO ═══ -->
+  <div class="print-only" style="margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;
+                border-bottom:2px solid #1e293b;padding-bottom:10px;margin-bottom:8px;">
+      <div>
+        <p style="font-size:22px;font-weight:800;color:#1e293b;margin:0;">Clínica Pelegrino</p>
+        <p style="font-size:10px;color:#64748b;margin:3px 0 0 0;text-transform:uppercase;letter-spacing:1px;">Gestão Financeira</p>
+      </div>
+      <div style="text-align:right;">
+        <p style="font-size:16px;font-weight:700;color:#1e293b;margin:0;">TABELA DE PREÇOS</p>
+        <p id="printReajuste" style="font-size:11px;color:#475569;margin:3px 0 0;font-weight:600;"></p>
+        <p id="printData"     style="font-size:10px;color:#64748b;margin:2px 0 0;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HEADER (apenas tela) ═══ -->
+  <header class="no-print sticky top-0 z-50 bg-[#0A1628]/95 backdrop-blur border-b border-slate-700/50
+                 h-14 flex items-center px-5 gap-4 justify-between">
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0EA5E9] to-[#1B3A6B]
+                  flex items-center justify-center text-white font-bold text-xs">CP</div>
+      <div>
+        <p class="text-white font-bold text-sm leading-tight">Clínica Pelegrino</p>
+        <p class="text-slate-400 text-[10px] uppercase tracking-wider">Tabela de Preços — Secretaria</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap justify-end">
+      <!-- Badge reajuste -->
+      <div class="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-700/40
+                  rounded-lg px-3 py-1.5 shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+        <span class="text-emerald-300 text-xs font-semibold" id="badgePct">5,0%</span>
+        <span class="text-slate-500 text-xs" id="badgeData"></span>
+      </div>
+      <!-- Print -->
+      <button onclick="window.print()"
+        class="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600
+               text-slate-200 text-xs font-medium px-3 py-2 rounded-lg transition shrink-0">
+        🖨 Imprimir / PDF
+      </button>
+      <!-- Voltar -->
+      <a href="index.html#simulacao"
+        class="flex items-center gap-1.5 bg-[#0EA5E9] hover:bg-[#0284c7]
+               text-white text-xs font-semibold px-3 py-2 rounded-lg transition shrink-0">
+        ← Voltar à Análise
+      </a>
+    </div>
+  </header>
+
+  <div class="max-w-5xl mx-auto px-4 py-5">
+
+    <!-- ═══ BANNER INFO (apenas tela) ═══ -->
+    <div class="no-print mb-5 bg-slate-800/50 border border-slate-700/40 rounded-xl p-4">
+      <div class="flex flex-wrap gap-6 items-center justify-between">
+        <div class="flex gap-8 flex-wrap">
+          <div>
+            <p class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5">Reajuste aplicado</p>
+            <p class="text-white font-bold text-3xl" id="infoReajuste">5,0%</p>
+          </div>
+          <div>
+            <p class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5">Confirmado em</p>
+            <p class="text-slate-300 font-medium text-sm leading-snug" id="infoData"
+               style="max-width:240px;">—</p>
+          </div>
+          <div>
+            <p class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5">Total da tabela</p>
+            <p class="text-white font-bold text-3xl" id="infoTotal">—</p>
+          </div>
+          <div>
+            <p class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5">Procedimentos</p>
+            <p class="text-white font-bold text-3xl">31</p>
+          </div>
+        </div>
+        <div class="text-right text-slate-500 text-xs leading-relaxed shrink-0">
+          <p>Para alterar o percentual,</p>
+          <a href="index.html#simulacao"
+             class="text-[#0EA5E9] hover:underline font-medium">acesse o Simulador →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FILTROS + BUSCA (apenas tela) ═══ -->
+    <div class="no-print flex flex-wrap items-center gap-2 mb-4">
+      <div class="flex flex-wrap gap-1.5">
+        <button onclick="filtrar('todos',this)"         class="btn-filtro ativo text-xs px-3 py-1.5 rounded-full font-medium transition">Todos</button>
+        <button onclick="filtrar('Extracoes',this)"     class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Extrações</button>
+        <button onclick="filtrar('Protese',this)"       class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Prótese</button>
+        <button onclick="filtrar('Aparelhos',this)"     class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Aparelhos</button>
+        <button onclick="filtrar('Implante',this)"      class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Implante</button>
+        <button onclick="filtrar('Endodontia',this)"    class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Endodontia</button>
+        <button onclick="filtrar('Clareamento',this)"   class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Clareamento</button>
+        <button onclick="filtrar('FacetasLentes',this)" class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Facetas/Lentes</button>
+        <button onclick="filtrar('Restauracoes',this)"  class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Restaurações</button>
+        <button onclick="filtrar('Outros',this)"        class="btn-filtro text-xs px-3 py-1.5 rounded-full font-medium transition">Outros</button>
+      </div>
+      <div class="flex-1 min-w-[180px]">
+        <input type="text" id="searchInput"
+          placeholder="🔍  Buscar procedimento..."
+          oninput="renderTabela()"
+          class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg
+                 px-3 py-2 focus:outline-none focus:border-[#0EA5E9] placeholder-slate-500" />
+      </div>
+    </div>
+
+    <!-- ═══ TABELA ═══ -->
+    <div class="main-card bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-700/50 bg-slate-800/80">
+            <th class="no-print text-left text-slate-400 font-semibold text-[11px] uppercase
+                       tracking-wider px-4 py-3 w-28">Grupo</th>
+            <th class="text-left text-slate-400 font-semibold text-[11px] uppercase
+                       tracking-wider px-4 py-3">Procedimento</th>
+            <th class="text-right text-slate-400 font-semibold text-[11px] uppercase
+                       tracking-wider px-4 py-3 w-32">Preço Atual</th>
+            <th class="text-right text-emerald-400 font-bold text-[11px] uppercase
+                       tracking-wider px-4 py-3 w-36">Novo Preço</th>
+            <th class="no-print text-right text-slate-400 font-semibold text-[11px] uppercase
+                       tracking-wider px-4 py-3 w-24">Diferença</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaBody"></tbody>
+        <tfoot id="tabelaFoot"></tfoot>
+      </table>
+    </div>
+
+    <!-- RODAPÉ DE IMPRESSÃO -->
+    <div class="print-only" style="margin-top:16px;padding-top:8px;border-top:1px solid #e2e8f0;
+                display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;">
+      <span>Clínica Pelegrino — Tabela de Preços Oficial</span>
+      <span id="printFooterDate"></span>
+    </div>
+
+  </div><!-- /max-w-5xl -->
+
+  <script>
+    // ============================================================
+    // DADOS — Procedimentos e preços atuais
+    // ============================================================
+    const PRECOS = [
+      { g: 'Extracoes',     gl: 'Extrações',      p: 'Exodontia Simples',                atual: 200  },
+      { g: 'Extracoes',     gl: 'Extrações',      p: 'Exodontia Siso Superiores',        atual: 275  },
+      { g: 'Extracoes',     gl: 'Extrações',      p: 'Exodontia Siso Inferior',          atual: 350  },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Coroa Artglass / Cerômero',        atual: 600  },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Coroa de Cerâmica Pura',           atual: 1200 },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Pino de Fibra de Vidro',           atual: 100  },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Adesiva (2 rest. + 1 suspensa)',   atual: 1100 },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Fixa 2 ou 3 elementos',            atual: 1500 },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Restaurado de Resina (protético)', atual: 500  },
+      { g: 'Protese',       gl: 'Prótese',        p: 'Inlay / Onlay de Porcelana',       atual: 1000 },
+      { g: 'Protese',       gl: 'Prótese',        p: 'PT (Prótese Total)',               atual: 1200 },
+      { g: 'Protese',       gl: 'Prótese',        p: 'PPR',                              atual: 1200 },
+      { g: 'Aparelhos',     gl: 'Aparelhos',      p: 'Manutenção',                       atual: 100  },
+      { g: 'Aparelhos',     gl: 'Aparelhos',      p: 'Autoligado',                       atual: 700  },
+      { g: 'Aparelhos',     gl: 'Aparelhos',      p: 'Estético',                         atual: 600  },
+      { g: 'Aparelhos',     gl: 'Aparelhos',      p: 'Metálico',                         atual: 300  },
+      { g: 'Aparelhos',     gl: 'Aparelhos',      p: 'Contenção Móvel',                  atual: 350  },
+      { g: 'Aparelhos',     gl: 'Aparelhos',      p: 'Alinhador',                        atual: 250  },
+      { g: 'Implante',      gl: 'Implante',       p: 'Cirurgia de Implante',             atual: 1200 },
+      { g: 'Implante',      gl: 'Implante',       p: 'PSI',                              atual: 1300 },
+      { g: 'Endodontia',    gl: 'Endodontia',     p: 'Canal Molar',                      atual: 950  },
+      { g: 'Endodontia',    gl: 'Endodontia',     p: 'Canal Pré-molar',                  atual: 850  },
+      { g: 'Endodontia',    gl: 'Endodontia',     p: 'Canal Incisivo',                   atual: 850  },
+      { g: 'Clareamento',   gl: 'Clareamento',    p: '1 Sessão',                         atual: 350  },
+      { g: 'Clareamento',   gl: 'Clareamento',    p: 'Caseiro',                          atual: 400  },
+      { g: 'Clareamento',   gl: 'Clareamento',    p: 'Completo (2 sessões + caseiro)',   atual: 1000 },
+      { g: 'FacetasLentes', gl: 'Facetas/Lentes', p: 'Faceta em Resina',                 atual: 275  },
+      { g: 'FacetasLentes', gl: 'Facetas/Lentes', p: 'Lente de Porcelana',               atual: 1200 },
+      { g: 'Restauracoes',  gl: 'Restaurações',   p: 'Restauração Simples',              atual: 140  },
+      { g: 'Restauracoes',  gl: 'Restaurações',   p: 'Restauração de Resina',            atual: 225  },
+      { g: 'Outros',        gl: 'Outros',         p: 'Profilaxia + Raspagem',            atual: 250  },
+    ];
+
+    function arredondar(v) {
+      if (v < 150) return Math.round(v / 5)  * 5;
+      if (v < 300) return Math.round(v / 10) * 10;
+      if (v < 600) return Math.round(v / 25) * 25;
+      return       Math.round(v / 50) * 50;
+    }
+
+    function brl(v) {
+      return 'R\u00a0' + v.toLocaleString('pt-BR',
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ============================================================
+    // ESTADO — lê percentual salvo no localStorage
+    // ============================================================
+    let reajustePct  = 5;
+    let reajusteData = null;
+    let filtroAtivo  = 'todos';
+
+    (function initState() {
+      try {
+        const saved = localStorage.getItem('cpReajuste');
+        if (saved) {
+          const obj   = JSON.parse(saved);
+          reajustePct  = (typeof obj.pct === 'number') ? obj.pct : 5;
+          reajusteData = obj.data ? new Date(obj.data) : null;
+        }
+      } catch (e) { /* usa padrão 5% */ }
+    })();
+
+    // ============================================================
+    // RENDERIZAR TABELA
+    // ============================================================
+    function renderTabela() {
+      const mult   = 1 + reajustePct / 100;
+      const search = (document.getElementById('searchInput')?.value ?? '').trim().toLowerCase();
+      const tbody  = document.getElementById('tabelaBody');
+      const tfoot  = document.getElementById('tabelaFoot');
+      tbody.innerHTML = '';
+
+      let somaAtual = 0, somaNovo = 0, count = 0;
+      let grupoAtual  = '';
+      const showGrps  = filtroAtivo === 'todos' && !search;
+
+      PRECOS.forEach((item, i) => {
+        if (filtroAtivo !== 'todos' && item.g !== filtroAtivo) return;
+        if (search &&
+            !item.p.toLowerCase().includes(search) &&
+            !item.gl.toLowerCase().includes(search)) return;
+
+        const novo = arredondar(item.atual * mult);
+        const diff = novo - item.atual;
+        somaAtual += item.atual;
+        somaNovo  += novo;
+        count++;
+
+        // Separador de grupo
+        if (showGrps && item.gl !== grupoAtual) {
+          grupoAtual = item.gl;
+          tbody.innerHTML +=
+            '<tr class="group-hdr no-print"><td colspan="5" ' +
+            'style="background:#1e293b;color:#64748b;font-size:10px;' +
+            'font-weight:600;text-transform:uppercase;letter-spacing:.07em;' +
+            'padding:5px 16px;border-top:1px solid #334155;">' +
+            item.gl + '</td></tr>';
+        }
+
+        // Destaque de busca
+        let proc = item.p;
+        if (search) {
+          const esc = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          proc = item.p.replace(new RegExp('(' + esc + ')', 'gi'),
+            '<mark class="highlight">$1</mark>');
+        }
+
+        const rowBg = (i % 2 === 0) ? 'bg-slate-800/20' : '';
+        tbody.innerHTML +=
+          '<tr class="' + rowBg + ' border-b border-slate-700/20 hover:bg-slate-700/20 transition">' +
+          '<td class="no-print px-4 py-2.5 text-slate-400 text-xs">' + item.gl + '</td>' +
+          '<td class="px-4 py-2.5 text-slate-200">' + proc + '</td>' +
+          '<td class="px-4 py-2.5 text-right font-mono text-xs text-slate-400">'  + brl(item.atual) + '</td>' +
+          '<td class="px-4 py-2.5 text-right font-mono font-bold text-emerald-300 novo-preco">' + brl(novo) + '</td>' +
+          '<td class="no-print px-4 py-2.5 text-right font-mono text-xs text-slate-500">+' + brl(diff) + '</td>' +
+          '</tr>';
+      });
+
+      // Totais
+      const diffTotal = somaNovo - somaAtual;
+      tfoot.innerHTML =
+        '<tr class="tfoot-row border-t border-slate-600 bg-slate-800/60 font-bold">' +
+        '<td class="no-print px-4 py-3"></td>' +
+        '<td class="px-4 py-3 text-slate-200 text-xs uppercase tracking-wider">Total (' + count + ' procedimentos)</td>' +
+        '<td class="px-4 py-3 text-right font-mono text-slate-300">' + brl(somaAtual) + '</td>' +
+        '<td class="px-4 py-3 text-right font-mono text-emerald-300 text-base novo-preco">' + brl(somaNovo) + '</td>' +
+        '<td class="no-print px-4 py-3 text-right font-mono text-slate-400">+' + brl(diffTotal) + '</td>' +
+        '</tr>';
+
+      // Atualiza total no banner
+      const elTotal = document.getElementById('infoTotal');
+      if (elTotal) elTotal.textContent = brl(somaNovo);
+    }
+
+    // ============================================================
+    // FILTROS
+    // ============================================================
+    function filtrar(grupo, btn) {
+      filtroAtivo = grupo;
+      document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('ativo'));
+      if (btn) btn.classList.add('ativo');
+      renderTabela();
+    }
+
+    // ============================================================
+    // ATUALIZA DISPLAYS (percentual, datas)
+    // ============================================================
+    function updateDisplay() {
+      const pctStr = reajustePct.toFixed(1).replace('.', ',') + '%';
+      const now    = new Date();
+      const nowStr = now.toLocaleDateString('pt-BR',
+        { day: '2-digit', month: 'long', year: 'numeric' });
+
+      // Badge header
+      const bp = document.getElementById('badgePct');
+      if (bp) bp.textContent = pctStr;
+
+      const bd = document.getElementById('badgeData');
+      if (bd && reajusteData)
+        bd.textContent = '\u00b7 ' + reajusteData.toLocaleDateString('pt-BR');
+
+      // Banner
+      const ir = document.getElementById('infoReajuste');
+      if (ir) ir.textContent = pctStr;
+
+      const id = document.getElementById('infoData');
+      if (id) {
+        if (reajusteData) {
+          id.textContent = reajusteData.toLocaleDateString('pt-BR',
+            { day:'2-digit', month:'long', year:'numeric',
+              hour:'2-digit', minute:'2-digit' });
+          id.style.color = '';
+        } else {
+          id.textContent = 'Usando padrão (5,0% — IPCA 2025). Confirme no Simulador.';
+          id.style.color  = '#f59e0b';
+        }
+      }
+
+      // Elementos de impressão
+      const pr = document.getElementById('printReajuste');
+      if (pr) pr.textContent = 'Reajuste: ' + pctStr +
+        (reajusteData ? '  ·  Confirmado em: ' + reajusteData.toLocaleDateString('pt-BR') : '');
+
+      const pd = document.getElementById('printData');
+      if (pd) pd.textContent = 'Emitido em: ' + nowStr;
+
+      const pfd = document.getElementById('printFooterDate');
+      if (pfd) pfd.textContent = 'Emitido em ' + nowStr;
+
+      renderTabela();
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    updateDisplay();
+  </script>
+</body>
+</html>
