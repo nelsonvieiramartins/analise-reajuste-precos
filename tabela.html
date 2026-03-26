@@ -109,10 +109,7 @@
             <p class="text-slate-300 font-medium text-sm leading-snug" id="infoData"
                style="max-width:240px;">—</p>
           </div>
-          <div>
-            <p class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5">Total da tabela</p>
-            <p class="text-white font-bold text-3xl" id="infoTotal">—</p>
-          </div>
+
           <div>
             <p class="text-slate-500 text-[10px] uppercase tracking-wider mb-0.5">Procedimentos</p>
             <p class="text-white font-bold text-3xl">31</p>
@@ -159,7 +156,7 @@
             <th class="text-left text-slate-400 font-semibold text-[11px] uppercase
                        tracking-wider px-4 py-3">Procedimento</th>
             <th class="text-right text-slate-400 font-semibold text-[11px] uppercase
-                       tracking-wider px-4 py-3 w-32">Preço Atual</th>
+                       tracking-wider px-4 py-3 w-32">Preço Anterior</th>
             <th class="text-right text-emerald-400 font-bold text-[11px] uppercase
                        tracking-wider px-4 py-3 w-36">Novo Preço</th>
             <th class="no-print text-right text-slate-400 font-semibold text-[11px] uppercase
@@ -304,20 +301,7 @@
           '</tr>';
       });
 
-      // Totais
-      const diffTotal = somaNovo - somaAtual;
-      tfoot.innerHTML =
-        '<tr class="tfoot-row border-t border-slate-600 bg-slate-800/60 font-bold">' +
-        '<td class="no-print px-4 py-3"></td>' +
-        '<td class="px-4 py-3 text-slate-200 text-xs uppercase tracking-wider">Total (' + count + ' procedimentos)</td>' +
-        '<td class="px-4 py-3 text-right font-mono text-slate-300">' + brl(somaAtual) + '</td>' +
-        '<td class="px-4 py-3 text-right font-mono text-emerald-300 text-base novo-preco">' + brl(somaNovo) + '</td>' +
-        '<td class="no-print px-4 py-3 text-right font-mono text-slate-400">+' + brl(diffTotal) + '</td>' +
-        '</tr>';
-
-      // Atualiza total no banner
-      const elTotal = document.getElementById('infoTotal');
-      if (elTotal) elTotal.textContent = brl(somaNovo);
+      tfoot.innerHTML = '';
     }
 
     // ============================================================

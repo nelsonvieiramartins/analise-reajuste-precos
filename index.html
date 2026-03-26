@@ -1593,8 +1593,22 @@
     atualizarSimulador(pct);
   }
 
-  // Inicializar simulador
-  atualizarSimulador(5);
+  // Inicializar simulador — restaura último percentual salvo (localStorage)
+  (function () {
+    let initPct = 5;
+    try {
+      const saved = localStorage.getItem('cpReajuste');
+      if (saved) {
+        const obj = JSON.parse(saved);
+        if (typeof obj.pct === 'number') initPct = obj.pct;
+      }
+    } catch (e) { /* usa padrão 5% */ }
+    const slider = document.getElementById('sliderSim');
+    const input  = document.getElementById('inputSimNum');
+    if (slider) slider.value = Math.min(initPct, 30);
+    if (input)  input.value  = initPct;
+    atualizarSimulador(initPct);
+  })();
 
   // ============================================================
   // FORMATAÇÃO
