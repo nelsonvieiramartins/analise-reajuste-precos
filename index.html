@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Despesas – Clínica Pelegrino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .sidebar-link { transition: all 0.15s; }
+    .sidebar-link:hover { background: rgba(14, 165, 233, 0.15); }
+    .sidebar-link.active { background: rgba(14, 165, 233, 0.2); border-left: 3px solid #0EA5E9; }
+    .card-hover { transition: transform 0.15s, box-shadow 0.15s; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    .chart-container { position: relative; height: 280px; }
+    .var-pos { color: #f87171; }
+    .var-neg { color: #34d399; }
+    .var-neutral { color: #94a3b8; }
+    .tag-high { background: #fee2e2; color: #dc2626; }
+    .tag-low { background: #dcfce7; color: #16a34a; }
+    .tag-flat { background: #e0f2fe; color: #0284c7; }
+    @media print { .no-print { display: none; } }
+
+    /* ── Slider de simulação ── */
+    .sim-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%; height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #f59e0b var(--val, 16.7%), #334155 var(--val, 16.7%));
+      outline: none; cursor: pointer;
+    }
+    .sim-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #f59e0b;
+      border: 3px solid #0F172A;
+      box-shadow: 0 0 0 2px #f59e0b40;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .sim-slider::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px #f59e0b40; }
+    .sim-slider::-moz-range-thumb {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #f59e0b;
+      border: 3px solid #0F172A;
+      cursor: pointer;
+    }
+    .preset-btn {
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      background: #1e293b; color: #94a3b8; border: 1px solid #334155;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .preset-btn:hover { background: #f59e0b20; color: #f59e0b; border-color: #f59e0b40; }
+    .preset-btn.active { background: #f59e0b20; color: #f59e0b; border-color: #f59e0b; }
+    .col-analise { background: rgba(14,165,233,0.06); }
+    .col-sim     { background: rgba(245,158,11,0.08); }
+    /* Filtros de despesas completas */
+    .btn-desp { transition: all 0.15s; }
+    .btn-desp.active-desp { background: #0EA5E9 !important; color: white !important; }
+    .tipo-fixo       { background: rgba(14,165,233,0.15); color: #38bdf8; }
+    .tipo-pessoal    { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .tipo-operac     { background: rgba(34,197,94,0.15);  color: #4ade80; }
+    .tipo-variavel   { background: rgba(239,68,68,0.15);  color: #f87171; }
+    .tipo-outros     { background: rgba(148,163,184,0.1); color: #94a3b8; }
+    .precif-badge    { background: rgba(14,165,233,0.2);  color: #0EA5E9; font-size:10px; padding:1px 5px; border-radius:4px; }
+  </style>
+</head>
+<body class="bg-[#0F172A] text-white min-h-screen flex">
+
+  <!-- ============================================================
+       SIDEBAR
+  ============================================================ -->
+  <aside class="no-print w-56 min-h-screen bg-[#0F172A] border-r border-slate-700/50 flex flex-col fixed top-0 left-0 z-40">
+    <!-- Logo -->
+    <div class="p-5 border-b border-slate-700/50">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0EA5E9] to-[#1B3A6B] flex items-center justify-center text-white font-bold text-sm">CP</div>
+        <div>
+          <p class="text-white font-bold text-sm leading-tight">Clínica Pelegrino</p>
+          <p class="text-slate-400 text-[10px] uppercase tracking-wider">Gestão Financeira</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <p class="text-slate-500 text-[10px] font-semibold uppercase tracking-widest px-3 pt-3 pb-1">Análise</p>
+      <a href="#resumo" class="sidebar-link active flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-200">
+        <span class="text-[#0EA5E9]">⬛</span> Resumo Executivo
+      </a>
+      <a href="#comparativo" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>📊</span> Comparativo
+      </a>
+      <a href="#detalhes" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>📋</span> Detalhamento
+      </a>
+      <a href="#excluidos" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>📊</span> Desp. Completas
+      </a>
+      <p class="text-slate-500 text-[10px] font-semibold uppercase tracking-widest px-3 pt-4 pb-1">Precificação</p>
+      <a href="#metodologia" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>🧮</span> Metodologia
+      </a>
+      <a href="#simulacao" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>🎮</span> Simulador
+      </a>
+      <a href="#faturamento" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>📈</span> Faturamento Simulado
+      </a>
+      <a href="#tabela" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400">
+        <span>💰</span> Tabela de Preços
+      </a>
+    </nav>
+
+    <!-- Footer -->
+    <div class="p-4 border-t border-slate-700/50">
+      <p class="text-slate-500 text-[10px] text-center">Jan-Mar 2025 × Jan-Mar 2026</p>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT
+  ============================================================ -->
+  <main class="ml-56 flex-1 min-h-screen bg-[#0F172A]">
+
+    <!-- Top header -->
+    <header class="sticky top-0 z-30 bg-[#0F172A]/95 backdrop-blur border-b border-slate-700/50 px-8 py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold text-white">Análise de Reajuste de Preços</h1>
+        <p class="text-slate-400 text-xs">Comparativo de despesas fixas e comparáveis — base para nova tabela de valores</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="bg-[#0EA5E9]/10 text-[#0EA5E9] text-xs font-semibold px-3 py-1.5 rounded-full border border-[#0EA5E9]/20">
+          IPCA ref.: 4,83%
+        </span>
+        <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-500/20">
+          Análise: 5%
+        </span>
+        <span id="badge-sim" class="bg-amber-500/10 text-amber-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-500/20">
+          Simulação: 5,0%
+        </span>
+        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
+          ⬇ Exportar
+        </button>
+      </div>
+    </header>
+
+    <div class="p-8 space-y-8">
+
+      <!-- ============================================================
+           SEÇÃO 1 – RESUMO EXECUTIVO
+      ============================================================ -->
+      <section id="resumo">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Resumo Executivo</h2>
+
+        <!-- Aviso metodológico -->
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 flex gap-3">
+          <span class="text-amber-400 text-lg shrink-0">⚠</span>
+          <div>
+            <p class="text-amber-300 text-sm font-semibold">Metodologia da análise de precificação</p>
+            <p class="text-amber-200/70 text-xs mt-0.5 leading-relaxed">
+              Para o cálculo do reajuste, foram usadas <strong>9 categorias fixas comparáveis</strong> (Jan+Fev 2025×2026).
+              Custos variáveis (Laboratórios, Materiais, Porcentagens) são excluídos da precificação por variarem com o volume de procedimentos.
+              Veja os dados completos de todas as 27 categorias na seção <a href="#excluidos" class="text-amber-300 underline hover:text-white">Despesas Completas</a>.
+            </p>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+          <div class="card-hover bg-gradient-to-br from-[#1B3A6B] to-[#0c2040] rounded-2xl p-5 border border-blue-800/40">
+            <p class="text-slate-400 text-xs font-medium mb-1">Total Comparável 2025</p>
+            <p class="text-white text-2xl font-bold">R$ 25.534</p>
+            <p class="text-slate-400 text-xs mt-1">Bimestral Jan+Fev</p>
+            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">≈ R$ 12.767/mês</p>
+          </div>
+
+          <div class="card-hover bg-gradient-to-br from-[#1B3A6B] to-[#0c2040] rounded-2xl p-5 border border-blue-800/40">
+            <p class="text-slate-400 text-xs font-medium mb-1">Total Comparável 2026</p>
+            <p class="text-white text-2xl font-bold">R$ 25.464</p>
+            <p class="text-slate-400 text-xs mt-1">Bimestral Jan+Fev</p>
+            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">≈ R$ 12.732/mês</p>
+          </div>
+
+          <div class="card-hover bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700/40">
+            <p class="text-slate-400 text-xs font-medium mb-1">Variação Real (comparável)</p>
+            <p class="text-emerald-400 text-2xl font-bold">-0,28%</p>
+            <p class="text-slate-400 text-xs mt-1">Despesas praticamente estáveis</p>
+            <div class="mt-2 inline-flex items-center gap-1 bg-emerald-500/10 rounded px-2 py-0.5">
+              <span class="text-emerald-400 text-xs font-semibold">✓ Abaixo do IPCA</span>
+            </div>
+          </div>
+
+          <div class="card-hover bg-gradient-to-br from-[#0EA5E9]/20 to-[#0EA5E9]/5 rounded-2xl p-5 border border-[#0EA5E9]/30">
+            <p class="text-slate-400 text-xs font-medium mb-1">Reajuste Recomendado</p>
+            <p class="text-[#0EA5E9] text-2xl font-bold">5,0%</p>
+            <p class="text-slate-400 text-xs mt-1">Baseado no IPCA 2025</p>
+            <p class="text-[#0EA5E9] text-xs font-semibold mt-2">Despesas < IPCA = reajuste pelo índice</p>
+          </div>
+        </div>
+
+        <!-- Linha de contexto -->
+        <div class="grid grid-cols-3 gap-4 mt-4">
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
+            <p class="text-slate-400 text-xs mb-1">Maior alta — Imposto Jurídico</p>
+            <p class="text-red-400 text-xl font-bold">+83,4%</p>
+            <p class="text-slate-500 text-xs mt-1">R$ 646/mês → R$ 1.185/mês</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
+            <p class="text-slate-400 text-xs mb-1">Maior queda — Funcionárias</p>
+            <p class="text-emerald-400 text-xl font-bold">-10,3%</p>
+            <p class="text-slate-500 text-xs mt-1">R$ 5.529/mês → R$ 4.960/mês</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
+            <p class="text-slate-400 text-xs mb-1">IPCA acumulado 2025</p>
+            <p class="text-[#0EA5E9] text-xl font-bold">4,83%</p>
+            <p class="text-slate-500 text-xs mt-1">Fonte: IBGE — inflação oficial</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 2 – GRÁFICOS COMPARATIVOS
+      ============================================================ -->
+      <section id="comparativo">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Comparativo por Categoria</h2>
+
+        <div class="grid grid-cols-3 gap-6">
+
+          <!-- Gráfico 1: Barras agrupadas (ocupa 2/3) -->
+          <div class="col-span-2 bg-slate-800/50 rounded-2xl p-6 border border-slate-700/40">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-white font-semibold text-sm">Média Mensal por Categoria</h3>
+                <p class="text-slate-400 text-xs mt-0.5">Média de Jan+Fev — 2025 × 2026 (R$)</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#1B3A6B] inline-block"></span>2025</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#0EA5E9] inline-block"></span>2026</span>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartBarCategoria"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfico 2: Variação % (ocupa 1/3) -->
+          <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/40">
+            <div class="mb-4">
+              <h3 class="text-white font-semibold text-sm">Variação % (2025→2026)</h3>
+              <p class="text-slate-400 text-xs mt-0.5">Verde = queda • Vermelho = alta</p>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartVarPct"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Totais mensais (linha do tempo) -->
+        <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/40 mt-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-white font-semibold text-sm">Total Mensal de Despesas Comparáveis</h3>
+              <p class="text-slate-400 text-xs mt-0.5">Evolução mês a mês — Jan/25, Fev/25, Jan/26, Fev/26</p>
+            </div>
+          </div>
+          <div style="height: 200px; position: relative;">
+            <canvas id="chartMensal"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 3 – TABELA DETALHAMENTO
+      ============================================================ -->
+      <section id="detalhes">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Detalhamento por Categoria</h2>
+
+        <div class="bg-slate-800/50 rounded-2xl border border-slate-700/40 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-700/40 flex items-center justify-between">
+            <p class="text-white font-semibold text-sm">9 categorias fixas comparáveis — base da análise de precificação</p>
+            <p class="text-slate-400 text-xs">Valores em R$</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-900/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                  <th class="text-left px-5 py-3">Categoria</th>
+                  <th class="text-right px-4 py-3">Jan/25</th>
+                  <th class="text-right px-4 py-3">Fev/25</th>
+                  <th class="text-right px-4 py-3 bg-blue-900/20">Média/25</th>
+                  <th class="text-right px-4 py-3">Jan/26</th>
+                  <th class="text-right px-4 py-3">Fev/26</th>
+                  <th class="text-right px-4 py-3 bg-sky-900/20">Média/26</th>
+                  <th class="text-right px-4 py-3">Var. R$</th>
+                  <th class="text-right px-4 py-3">Var. %</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaDetalhes"></tbody>
+              <tfoot>
+                <tr class="bg-slate-900 font-bold text-white border-t-2 border-slate-600">
+                  <td class="px-5 py-3.5">TOTAL GERAL</td>
+                  <td class="text-right px-4 py-3.5">R$ 12.619</td>
+                  <td class="text-right px-4 py-3.5">R$ 12.916</td>
+                  <td class="text-right px-4 py-3.5 bg-blue-900/20">R$ 12.767</td>
+                  <td class="text-right px-4 py-3.5">R$ 12.054</td>
+                  <td class="text-right px-4 py-3.5">R$ 13.410</td>
+                  <td class="text-right px-4 py-3.5 bg-sky-900/20">R$ 12.732</td>
+                  <td class="text-right px-4 py-3.5 text-emerald-400">-R$ 35</td>
+                  <td class="text-right px-4 py-3.5">
+                    <span class="tag-flat text-xs font-bold px-2 py-0.5 rounded">-0,28%</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 4 – DESPESAS COMPLETAS JAN-MAR 2025/2026
+      ============================================================ -->
+      <section id="excluidos">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Despesas Completas — Jan-Mar 2025/2026 (27 categorias)</h2>
+
+        <!-- KPI totais -->
+        <div class="grid grid-cols-3 gap-4 mb-5">
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
+            <p class="text-slate-400 text-xs mb-1">Total Despesas Q1 2025</p>
+            <p class="text-red-300 text-2xl font-black">R$&nbsp;71.092</p>
+            <p class="text-slate-500 text-[10px] mt-1">Jan+Fev+Mar 2025</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-red-500/30">
+            <p class="text-slate-400 text-xs mb-1">Total Despesas Q1 2026</p>
+            <p class="text-red-400 text-2xl font-black">R$&nbsp;76.270</p>
+            <p class="text-red-400 text-[10px] mt-1">+7,3% vs Q1 2025</p>
+          </div>
+          <div class="bg-amber-500/10 rounded-xl p-4 border border-amber-500/20">
+            <p class="text-slate-400 text-xs mb-1">Aumento das Despesas</p>
+            <p class="text-amber-400 text-2xl font-black">+R$&nbsp;5.178</p>
+            <p class="text-slate-500 text-[10px] mt-1">Acima do IPCA 2025 (4,83%)</p>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="flex gap-2 mb-4 flex-wrap" id="filtrosDespesas">
+          <button onclick="filtrarDespesas('todas')"
+            class="btn-desp active-desp px-3 py-1.5 text-xs font-semibold rounded-full bg-[#0EA5E9] text-white">
+            Todas (27)
+          </button>
+          <button onclick="filtrarDespesas('Fixo')"
+            class="btn-desp px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">
+            Fixas
+          </button>
+          <button onclick="filtrarDespesas('Pessoal')"
+            class="btn-desp px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">
+            Pessoal
+          </button>
+          <button onclick="filtrarDespesas('Operacional')"
+            class="btn-desp px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">
+            Operacional
+          </button>
+          <button onclick="filtrarDespesas('Variável')"
+            class="btn-desp px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">
+            Variáveis
+          </button>
+          <button onclick="filtrarDespesas('precif')"
+            class="btn-desp px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">
+            &#128274; Precificação (9)
+          </button>
+        </div>
+
+        <!-- Tabela completa -->
+        <div class="bg-slate-800/50 rounded-2xl border border-slate-700/40 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="bg-slate-900/70 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                  <th class="text-left px-4 py-3">Categoria</th>
+                  <th class="text-center px-2 py-3">Tipo</th>
+                  <th class="text-right px-3 py-3 bg-slate-800/40">Jan/25</th>
+                  <th class="text-right px-3 py-3 bg-slate-800/40">Fev/25</th>
+                  <th class="text-right px-3 py-3 bg-slate-800/40">Mar/25</th>
+                  <th class="text-right px-3 py-3 bg-sky-900/20" style="color:#0EA5E9">Q1 2025</th>
+                  <th class="text-right px-3 py-3">Jan/26</th>
+                  <th class="text-right px-3 py-3">Fev/26</th>
+                  <th class="text-right px-3 py-3">Mar/26</th>
+                  <th class="text-right px-3 py-3 bg-sky-900/30" style="color:#38bdf8">Q1 2026</th>
+                  <th class="text-right px-3 py-3">Var%</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaCompleta"></tbody>
+              <tfoot>
+                <tr class="bg-slate-900 font-bold text-white border-t-2 border-slate-600 text-[11px]" id="footerCompleta">
+                  <td class="px-4 py-3">TOTAL GERAL</td>
+                  <td></td>
+                  <td class="text-right px-3 py-3 bg-slate-800/40" id="ft-j25">—</td>
+                  <td class="text-right px-3 py-3 bg-slate-800/40" id="ft-f25">—</td>
+                  <td class="text-right px-3 py-3 bg-slate-800/40" id="ft-m25">—</td>
+                  <td class="text-right px-3 py-3 bg-sky-900/20 text-[#0EA5E9]" id="ft-t25">—</td>
+                  <td class="text-right px-3 py-3" id="ft-j26">—</td>
+                  <td class="text-right px-3 py-3" id="ft-f26">—</td>
+                  <td class="text-right px-3 py-3" id="ft-m26">—</td>
+                  <td class="text-right px-3 py-3 bg-sky-900/30 text-[#38bdf8]" id="ft-t26">—</td>
+                  <td class="text-right px-3 py-3" id="ft-var">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <p class="text-slate-500 text-[10px] mt-2">
+          &#128274; Categorias marcadas "Precificação" são as 9 usadas na análise de reajuste. Mar/2025 e Mar/2026 são dados parciais (~25/03 de cada ano).
+        </p>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 5 – METODOLOGIA
+      ============================================================ -->
+      <section id="metodologia">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Metodologia do Reajuste</h2>
+
+        <div class="bg-gradient-to-br from-[#0c2040] to-[#071525] rounded-2xl p-7 border border-blue-800/40">
+          <div class="grid grid-cols-3 gap-8">
+
+            <div class="space-y-3">
+              <div class="w-8 h-8 rounded-lg bg-[#0EA5E9]/20 flex items-center justify-center text-[#0EA5E9] font-bold text-sm">1</div>
+              <h4 class="text-white font-semibold text-sm">Filtro de dados comparáveis</h4>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                Foram mantidas apenas as categorias presentes nos 4 meses analisados (Jan/25, Fev/25, Jan/26, Fev/26), garantindo comparação justa sem distorções.
+              </p>
+              <div class="bg-slate-800/60 rounded-lg p-3">
+                <p class="text-[#0EA5E9] font-bold text-sm">9 categorias</p>
+                <p class="text-slate-400 text-xs">Aprovadas para análise</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="w-8 h-8 rounded-lg bg-[#0EA5E9]/20 flex items-center justify-center text-[#0EA5E9] font-bold text-sm">2</div>
+              <h4 class="text-white font-semibold text-sm">Cálculo da variação real</h4>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                Calculou-se a variação entre as médias mensais de cada período. As altas de Imposto Jurídico (+83,4%) foram compensadas pela redução em Funcionárias (-10,3%).
+              </p>
+              <div class="bg-slate-800/60 rounded-lg p-3">
+                <p class="text-emerald-400 font-bold text-sm">-0,28%</p>
+                <p class="text-slate-400 text-xs">Variação real comparável</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="w-8 h-8 rounded-lg bg-[#0EA5E9]/20 flex items-center justify-center text-[#0EA5E9] font-bold text-sm">3</div>
+              <h4 class="text-white font-semibold text-sm">Definição do reajuste</h4>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                Como as despesas comparáveis não superaram a inflação, o reajuste é baseado no <strong class="text-white">IPCA acumulado de 2025 (4,83%)</strong>, arredondado para 5% para cobrir custos excluídos e manter margem.
+              </p>
+              <div class="bg-[#0EA5E9]/10 rounded-lg p-3 border border-[#0EA5E9]/20">
+                <p class="text-[#0EA5E9] font-bold text-lg">5,0%</p>
+                <p class="text-slate-400 text-xs">Reajuste recomendado</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Linha do raciocínio -->
+          <div class="mt-6 pt-6 border-t border-slate-700/40">
+            <p class="text-slate-300 text-xs font-semibold mb-3 uppercase tracking-wider">Raciocínio lógico</p>
+            <div class="flex items-center gap-3 flex-wrap">
+              <div class="bg-slate-800/60 rounded-lg px-4 py-2 text-xs text-slate-300">
+                <span class="text-white font-semibold">Variação real: -0,28%</span>
+              </div>
+              <span class="text-slate-500">→</span>
+              <div class="bg-slate-800/60 rounded-lg px-4 py-2 text-xs text-slate-300">
+                <span class="text-white font-semibold">IPCA 2025: 4,83%</span>
+              </div>
+              <span class="text-slate-500">→</span>
+              <div class="bg-slate-800/60 rounded-lg px-4 py-2 text-xs text-slate-300">
+                Variação real &lt; IPCA
+              </div>
+              <span class="text-slate-500">→</span>
+              <div class="bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 rounded-lg px-4 py-2 text-xs text-[#0EA5E9] font-bold">
+                Reajustar pelo IPCA = 5%
+              </div>
+              <span class="text-slate-500">→</span>
+              <div class="bg-slate-800/60 rounded-lg px-4 py-2 text-xs text-slate-400">
+                Mantém poder de compra da clínica sem sobrecarregar pacientes
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 6 – SIMULADOR DE REAJUSTE
+      ============================================================ -->
+      <section id="simulacao">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Simulador de Reajuste</h2>
+
+        <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/20">
+
+          <!-- Título do simulador -->
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 text-lg">🎮</div>
+            <div>
+              <p class="text-white font-bold text-sm">Simulador de Cenários</p>
+              <p class="text-slate-400 text-xs">Ajuste a porcentagem para explorar diferentes cenários. A coluna de análise (5%) permanece inalterada para referência.</p>
+            </div>
+          </div>
+
+          <!-- Linha principal: slider + presets + display -->
+          <div class="grid grid-cols-3 gap-6 items-start">
+
+            <!-- Coluna esquerda: Análise (referência fixada) -->
+            <div class="bg-slate-900/60 rounded-xl p-4 border border-[#0EA5E9]/20">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-2 h-2 rounded-full bg-[#0EA5E9]"></span>
+                <p class="text-[#0EA5E9] text-xs font-bold uppercase tracking-wider">Análise — Referência Fixada</p>
+              </div>
+              <p class="text-white text-3xl font-black">5,0%</p>
+              <p class="text-slate-400 text-xs mt-1">Baseado no IPCA 2025</p>
+              <div class="mt-4 space-y-2 text-xs">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Soma da tabela (5%)</span>
+                  <span class="text-[#0EA5E9] font-semibold" id="somaAnalise">—</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Ganho sobre atual</span>
+                  <span class="text-[#0EA5E9] font-semibold" id="ganhoAnalise">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Coluna central: Slider -->
+            <div class="space-y-4">
+              <div class="flex items-end justify-between">
+                <p class="text-amber-400 text-xs font-bold uppercase tracking-wider">Simulação</p>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    id="inputSimNum"
+                    min="0" max="50" step="0.5"
+                    value="5"
+                    class="w-16 text-center bg-slate-900 border border-amber-500/40 text-amber-400 font-bold text-sm rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400"
+                  />
+                  <span class="text-amber-400 font-bold text-sm">%</span>
+                </div>
+              </div>
+
+              <!-- Valor grande central -->
+              <div class="text-center py-2">
+                <p class="text-amber-400 text-5xl font-black tracking-tight" id="simValDisplay">5,0%</p>
+                <p class="text-slate-500 text-xs mt-1">arraste o slider ou edite o campo</p>
+              </div>
+
+              <!-- Slider -->
+              <input
+                type="range"
+                id="sliderSim"
+                class="sim-slider"
+                min="0" max="30" step="0.5"
+                value="5"
+              />
+              <div class="flex justify-between text-slate-500 text-[10px]">
+                <span>0%</span><span>5%</span><span>10%</span><span>15%</span><span>20%</span><span>25%</span><span>30%</span>
+              </div>
+
+              <!-- Presets -->
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                <span class="text-slate-500 text-[10px] w-full">Atalhos rápidos:</span>
+                <button class="preset-btn active" onclick="setPreset(5)">5%</button>
+                <button class="preset-btn" onclick="setPreset(7)">7%</button>
+                <button class="preset-btn" onclick="setPreset(8)">8%</button>
+                <button class="preset-btn" onclick="setPreset(10)">10%</button>
+                <button class="preset-btn" onclick="setPreset(12)">12%</button>
+                <button class="preset-btn" onclick="setPreset(15)">15%</button>
+                <button class="preset-btn" onclick="setPreset(20)">20%</button>
+              </div>
+            </div>
+
+            <!-- Coluna direita: Resultado da simulação -->
+            <div class="bg-amber-500/10 rounded-xl p-4 border border-amber-500/20">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <p class="text-amber-400 text-xs font-bold uppercase tracking-wider">Resultado da Simulação</p>
+              </div>
+              <p class="text-white text-3xl font-black" id="simPctDisplay">5,0%</p>
+              <p class="text-slate-400 text-xs mt-1">Reajuste simulado</p>
+              <div class="mt-4 space-y-2 text-xs">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Soma da tabela</span>
+                  <span class="text-amber-400 font-semibold" id="somaSim">—</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Ganho sobre atual</span>
+                  <span class="text-amber-400 font-semibold" id="ganhoSim">—</span>
+                </div>
+                <div class="flex justify-between border-t border-slate-700/40 pt-2 mt-2">
+                  <span class="text-slate-400">Diferença vs análise</span>
+                  <span class="font-bold" id="difVsAnalise">—</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Barra de comparação visual -->
+          <div class="mt-6 pt-5 border-t border-slate-700/40">
+            <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Comparação visual da tabela de preços</p>
+            <div class="grid grid-cols-2 gap-3" id="barrasComparacao"></div>
+          </div>
+
+          <!-- Aviso de simulação -->
+          <div class="mt-4 flex gap-2 items-start bg-slate-900/40 rounded-lg p-3">
+            <span class="text-amber-400 text-sm shrink-0">ℹ</span>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              A simulação altera apenas a coluna <strong class="text-amber-400">Simulado</strong> na tabela abaixo.
+              A coluna <strong class="text-[#0EA5E9]">Análise (5%)</strong> permanece inalterada como referência da metodologia.
+              Os valores simulados são arredondados da mesma forma que os da análise.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 6.5 – RECEITA × DESPESAS × PROJEÇÃO 2026
+      ============================================================ -->
+      <section id="faturamento">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Receita × Despesas — Jan-Mar 2025/2026 + Projeção Anual</h2>
+
+        <!-- KPI Row -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-emerald-500/20">
+            <p class="text-slate-400 text-xs mb-1">Receita Q1 2025</p>
+            <p class="text-emerald-300 text-xl font-black">R$&nbsp;91.862</p>
+            <p class="text-slate-500 text-[10px] mt-1">Referência (Jan-Mar/2025)</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-emerald-400/30">
+            <p class="text-slate-400 text-xs mb-1">Receita Q1 2026</p>
+            <p class="text-emerald-400 text-xl font-black">R$&nbsp;87.570</p>
+            <p class="text-red-400 text-[10px] mt-1">▼ -4,7% vs 2025</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-red-500/20">
+            <p class="text-slate-400 text-xs mb-1">Despesas Q1 2026</p>
+            <p class="text-red-400 text-xl font-black">R$&nbsp;76.270</p>
+            <p class="text-red-400/70 text-[10px] mt-1">▲ +7,3% vs 2025</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-[#0EA5E9]/30">
+            <p class="text-slate-400 text-xs mb-1">Saldo Líquido Q1 2026</p>
+            <p class="text-[#0EA5E9] text-xl font-black">R$&nbsp;11.300</p>
+            <p class="text-red-400 text-[10px] mt-1">Margem 12,9% (era 22,6%)</p>
+          </div>
+        </div>
+
+        <!-- Tabela comparativa 2025 x 2026 -->
+        <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/40 mb-5">
+          <p class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-3">Comparativo Mensal — Receita, Despesas e Saldo</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="bg-slate-900/60 text-slate-500 uppercase tracking-wider text-[10px]">
+                  <th class="text-left px-4 py-2">Mês</th>
+                  <th class="text-right px-3 py-2 text-emerald-300">Receita 2025</th>
+                  <th class="text-right px-3 py-2 text-emerald-400">Receita 2026</th>
+                  <th class="text-right px-2 py-2">Var%</th>
+                  <th class="text-right px-3 py-2 text-red-300">Despesa 2025</th>
+                  <th class="text-right px-3 py-2 text-red-400">Despesa 2026</th>
+                  <th class="text-right px-2 py-2">Var%</th>
+                  <th class="text-right px-3 py-2 text-slate-300">Saldo 2025</th>
+                  <th class="text-right px-3 py-2 text-[#38bdf8]">Saldo 2026</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-700/30 hover:bg-slate-700/20">
+                  <td class="px-4 py-2.5 font-semibold text-slate-300">Janeiro</td>
+                  <td class="text-right px-3 py-2.5 text-emerald-300/80">R$&nbsp;26.551</td>
+                  <td class="text-right px-3 py-2.5 text-emerald-400">R$&nbsp;26.396</td>
+                  <td class="text-right px-2 py-2.5 text-slate-400">-0,6%</td>
+                  <td class="text-right px-3 py-2.5 text-red-300/80">R$&nbsp;23.584</td>
+                  <td class="text-right px-3 py-2.5 text-red-400">R$&nbsp;25.961</td>
+                  <td class="text-right px-2 py-2.5 text-red-400">+10,1%</td>
+                  <td class="text-right px-3 py-2.5 text-slate-400">R$&nbsp;2.967</td>
+                  <td class="text-right px-3 py-2.5 text-amber-400 font-semibold">R$&nbsp;435</td>
+                </tr>
+                <tr class="border-b border-slate-700/30 bg-slate-800/20 hover:bg-slate-700/20">
+                  <td class="px-4 py-2.5 font-semibold text-slate-300">Fevereiro</td>
+                  <td class="text-right px-3 py-2.5 text-emerald-300/80">R$&nbsp;46.421</td>
+                  <td class="text-right px-3 py-2.5 text-emerald-400">R$&nbsp;36.463</td>
+                  <td class="text-right px-2 py-2.5 text-red-400">-21,5%</td>
+                  <td class="text-right px-3 py-2.5 text-red-300/80">R$&nbsp;29.588</td>
+                  <td class="text-right px-3 py-2.5 text-red-400">R$&nbsp;28.358</td>
+                  <td class="text-right px-2 py-2.5 text-emerald-400">-4,2%</td>
+                  <td class="text-right px-3 py-2.5 text-slate-400">R$&nbsp;16.833</td>
+                  <td class="text-right px-3 py-2.5 text-[#38bdf8] font-semibold">R$&nbsp;8.105</td>
+                </tr>
+                <tr class="border-b border-slate-700/30 hover:bg-slate-700/20">
+                  <td class="px-4 py-2.5 font-semibold text-slate-300">Março <span class="text-amber-400 text-[9px] ml-1">*parcial</span></td>
+                  <td class="text-right px-3 py-2.5 text-emerald-300/80">R$&nbsp;18.891</td>
+                  <td class="text-right px-3 py-2.5 text-emerald-400">R$&nbsp;24.712</td>
+                  <td class="text-right px-2 py-2.5 text-emerald-400">+30,8%</td>
+                  <td class="text-right px-3 py-2.5 text-red-300/80">R$&nbsp;17.921</td>
+                  <td class="text-right px-3 py-2.5 text-red-400">R$&nbsp;21.952</td>
+                  <td class="text-right px-2 py-2.5 text-red-400">+22,5%</td>
+                  <td class="text-right px-3 py-2.5 text-slate-400">R$&nbsp;970</td>
+                  <td class="text-right px-3 py-2.5 text-[#38bdf8] font-semibold">R$&nbsp;2.760</td>
+                </tr>
+                <tr class="bg-slate-900/70 font-bold text-[11px]">
+                  <td class="px-4 py-3 text-white">Q1 TOTAL</td>
+                  <td class="text-right px-3 py-3 text-emerald-300">R$&nbsp;91.862</td>
+                  <td class="text-right px-3 py-3 text-emerald-400">R$&nbsp;87.570</td>
+                  <td class="text-right px-2 py-3 text-red-400">-4,7%</td>
+                  <td class="text-right px-3 py-3 text-red-300">R$&nbsp;71.092</td>
+                  <td class="text-right px-3 py-3 text-red-400">R$&nbsp;76.270</td>
+                  <td class="text-right px-2 py-3 text-red-400">+7,3%</td>
+                  <td class="text-right px-3 py-3 text-slate-200">R$&nbsp;20.770</td>
+                  <td class="text-right px-3 py-3 text-[#0EA5E9]">R$&nbsp;11.300</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-slate-500 text-[10px] mt-2 pl-1">* Março/2025 e Março/2026: dados até ~25/03 de cada ano — períodos equivalentes.</p>
+        </div>
+
+        <!-- 3 cards: Simulação / Média / Projeção -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+          <div class="bg-gradient-to-br from-emerald-950/50 to-slate-900/80 rounded-xl p-4 border border-emerald-500/20">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-emerald-400">&#128202;</span>
+              <p class="text-emerald-400 text-xs font-bold uppercase tracking-wider">Simulação Q1 2026</p>
+            </div>
+            <p class="text-slate-500 text-[10px] mb-3">Com reajuste de <span id="txtFatSimPct" class="text-amber-400 font-bold">5,0%</span></p>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Receita real Q1</span>
+                <span class="text-emerald-400 font-semibold">R$&nbsp;87.570</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Com reajuste</span>
+                <span class="text-amber-400 font-semibold" id="fatSimTotal">—</span>
+              </div>
+              <div class="flex justify-between border-t border-slate-700/40 pt-2">
+                <span class="text-slate-400">Ganho no trimestre</span>
+                <span class="text-emerald-400 font-bold" id="valFatGanho">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-[#0EA5E9]/20">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-[#0EA5E9]">&#128197;</span>
+              <p class="text-[#0EA5E9] text-xs font-bold uppercase tracking-wider">Média Mensal Q1</p>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Média real (3 meses)</span>
+                <span class="text-slate-300 font-semibold">R$&nbsp;29.190</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Média c/ reajuste</span>
+                <span class="text-amber-400 font-semibold" id="fatMediaSim">—</span>
+              </div>
+              <div class="flex justify-between border-t border-slate-700/40 pt-2">
+                <span class="text-slate-400">Ganho por mês</span>
+                <span class="text-emerald-400 font-bold" id="valFatGanhoMes">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-amber-500/20">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-amber-400">&#128302;</span>
+              <p class="text-amber-400 text-xs font-bold uppercase tracking-wider">Projeção Anual 2026</p>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Sem reajuste (12 meses)</span>
+                <span class="text-slate-300 font-semibold">R$&nbsp;350.280</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Com reajuste Abr–Dez</span>
+                <span class="text-amber-400 font-semibold" id="fatProjecaoAno">—</span>
+              </div>
+              <div class="flex justify-between border-t border-slate-700/40 pt-2">
+                <span class="text-slate-400">Ganho anual projetado</span>
+                <span class="text-emerald-400 font-bold" id="valFatGanhoAno">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela mensal detalhada -->
+        <div class="bg-slate-800/50 rounded-xl border border-slate-700/40 overflow-hidden mb-4">
+          <div class="px-5 py-3 bg-slate-900/40 border-b border-slate-700/40 flex items-center justify-between">
+            <p class="text-slate-300 text-xs font-bold uppercase tracking-wider">Detalhamento — Simulação de Receita por Mês</p>
+            <span class="text-amber-400 text-xs font-bold bg-amber-500/10 px-2 py-1 rounded-full" id="lblFatSimPct">Reajuste: 5,0%</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-900/60 text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                  <th class="text-left px-4 py-2.5">Mês (2026)</th>
+                  <th class="text-center px-4 py-2.5">Procedimentos</th>
+                  <th class="text-right px-4 py-2.5">Receita Real</th>
+                  <th class="text-right px-4 py-2.5 text-amber-400 bg-amber-500/5">Com Reajuste</th>
+                  <th class="text-right px-4 py-2.5 text-emerald-400 bg-emerald-500/5">Diferença</th>
+                </tr>
+              </thead>
+              <tbody id="tbFaturamento"></tbody>
+              <tfoot>
+                <tr class="bg-slate-800/80 font-bold border-t border-slate-700">
+                  <td class="px-4 py-3 text-white">TOTAL TRIMESTRE</td>
+                  <td class="text-center px-4 py-3 text-white">253</td>
+                  <td class="text-right px-4 py-3 text-white">R$&nbsp;87.570,50</td>
+                  <td class="text-right px-4 py-3 text-amber-400 bg-amber-500/10" id="tbFatTotSim">—</td>
+                  <td class="text-right px-4 py-3 text-emerald-400 bg-emerald-500/10" id="tbFatTotDif">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Alerta de margem -->
+        <div class="flex gap-2 items-start bg-red-950/30 rounded-lg p-3 border border-red-500/20">
+          <span class="text-red-400 text-base shrink-0">&#9888;</span>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            <strong class="text-red-400">Atenção — Margem em Risco:</strong>
+            O saldo líquido Q1/2026 (R$&nbsp;11.300, margem 12,9%) é
+            <strong class="text-red-400">45,6% menor</strong> que Q1/2025 (R$&nbsp;20.770, margem 22,6%).
+            A receita caiu 4,7% enquanto as despesas subiram 7,3%.
+            Sem reajuste, a projeção anual 2026 é R$&nbsp;350.280. Use o simulador
+            para ver o impacto de cada ponto percentual de ajuste sobre a receita dos próximos meses.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           SEÇÃO 7 – TABELA DE PREÇOS
+      ============================================================ -->
+      <section id="tabela">
+        <h2 class="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Tabela de Preços — Análise × Simulação</h2>
+
+        <!-- Resumo da tabela -->
+        <div class="grid grid-cols-4 gap-4 mb-5">
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
+            <p class="text-slate-400 text-xs mb-1">Total de procedimentos</p>
+            <p class="text-white text-2xl font-bold">31</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-[#0EA5E9]/30">
+            <p class="text-slate-400 text-xs mb-1">Reajuste análise (fixo)</p>
+            <p class="text-[#0EA5E9] text-2xl font-bold">5,0%</p>
+            <p class="text-slate-500 text-xs">Base: IPCA 2025</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-amber-500/30">
+            <p class="text-slate-400 text-xs mb-1">Reajuste simulação</p>
+            <p class="text-amber-400 text-2xl font-bold" id="resumoSimPct">5,0%</p>
+            <p class="text-slate-500 text-xs">Ajuste no simulador acima</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/40">
+            <p class="text-slate-400 text-xs mb-1">Δ Simulação vs Análise</p>
+            <p class="text-white text-2xl font-bold" id="resumoDelta">+R$ 0</p>
+            <p class="text-slate-500 text-xs">na soma de todos os preços</p>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="flex gap-2 mb-4 flex-wrap" id="filtroGrupos">
+          <button onclick="filtrarGrupo('todos')" class="btn-filtro active px-3 py-1.5 text-xs font-semibold rounded-full bg-[#0EA5E9] text-white">Todos</button>
+          <button onclick="filtrarGrupo('Extrações')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Extrações</button>
+          <button onclick="filtrarGrupo('Prótese')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Prótese</button>
+          <button onclick="filtrarGrupo('Aparelhos')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Aparelhos</button>
+          <button onclick="filtrarGrupo('Implante')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Implante</button>
+          <button onclick="filtrarGrupo('Endodontia')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Endodontia</button>
+          <button onclick="filtrarGrupo('Clareamento')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Clareamento</button>
+          <button onclick="filtrarGrupo('Facetas/Lentes')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Facetas/Lentes</button>
+          <button onclick="filtrarGrupo('Restaurações')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Restaurações</button>
+          <button onclick="filtrarGrupo('Outros')" class="btn-filtro px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600">Outros</button>
+        </div>
+
+        <div class="bg-slate-800/50 rounded-2xl border border-slate-700/40 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-900/70 text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-slate-700">
+                  <th class="text-left px-5 py-3">Grupo</th>
+                  <th class="text-left px-4 py-3">Procedimento</th>
+                  <th class="text-right px-4 py-3">Preço Atual</th>
+                  <th class="text-right px-4 py-3 col-analise" style="color:#0EA5E9">Análise 5%</th>
+                  <th class="text-right px-4 py-3 col-sim" style="color:#f59e0b" id="thSimCol">Simulação 5,0%</th>
+                  <th class="text-right px-4 py-3 col-sim" id="thDifCol">Δ Simulação</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaPrecos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="text-slate-500 text-xs mt-3">
+          * Preço Sugerido arredondado para valores comercialmente práticos. Todos os valores sem convênio.
+        </p>
+      </section>
+
+    </div><!-- /p-8 -->
+  </main><!-- /main -->
+
+  <!-- ============================================================
+       SCRIPTS
+  ============================================================ -->
+  <script>
+  // ============================================================
+  // DADOS REAIS — 9 CATEGORIAS COMPARÁVEIS
+  // ============================================================
+  const DADOS = [
+    { cat: "Aluguel",                    j25: 3050.68, f25: 3006.00, j26: 3007.72, f26: 2969.58 },
+    { cat: "Contabilidade",              j25: 1214.40, f25: 1214.00, j26: 1214.40, f26: 1296.86 },
+    { cat: "Empréstimo Jurídico",        j25: 1854.00, f25: 1854.00, j26: 1766.00, f26: 1766.00 },
+    { cat: "Telefone",                   j25:  182.09, f25:  211.74, j26:  296.45, f26:   57.50 },
+    { cat: "Codental (Sistema)",         j25:  160.90, f25:  114.90, j26:  128.90, f26:  128.90 },
+    { cat: "CHB Ambiental",              j25:   95.65, f25:   93.75, j26:  101.17, f26:  101.27 },
+    { cat: "Imposto Jurídico",           j25:  583.49, f25:  708.05, j26: 1249.95, f26: 1119.07 },
+    { cat: "Desp. Funcionárias",         j25: 5440.59, f25: 5616.92, j26: 4050.16, f26: 5869.27 },
+    { cat: "Material Conserv./Limpeza",  j25:   37.15, f25:   96.30, j26:  239.58, f26:  101.07 },
+  ];
+
+  // Calcular médias e variações
+  DADOS.forEach(d => {
+    d.m25 = (d.j25 + d.f25) / 2;
+    d.m26 = (d.j26 + d.f26) / 2;
+    d.varR = d.m26 - d.m25;
+    d.varP = (d.m26 / d.m25 - 1) * 100;
+  });
+
+  // ============================================================
+  // TABELA DE DETALHAMENTO
+  // ============================================================
+  const tbDetalhes = document.getElementById('tabelaDetalhes');
+  DADOS.forEach((d, i) => {
+    const isPos = d.varP > 0;
+    const isHigh = Math.abs(d.varP) > 20;
+    const tagClass = isPos ? (isHigh ? 'tag-high' : 'bg-red-900/30 text-red-300') : (isHigh ? 'tag-low' : 'bg-emerald-900/30 text-emerald-300');
+    const sinal = isPos ? '+' : '';
+    const varColor = isPos ? 'text-red-400' : 'text-emerald-400';
+    const rowBg = i % 2 === 0 ? 'bg-slate-800/30' : 'bg-transparent';
+
+    tbDetalhes.innerHTML += `
+      <tr class="${rowBg} hover:bg-slate-700/30 transition-colors border-b border-slate-700/20">
+        <td class="px-5 py-3 font-medium text-slate-200">${d.cat}</td>
+        <td class="text-right px-4 py-3 text-slate-300">${brl(d.j25)}</td>
+        <td class="text-right px-4 py-3 text-slate-300">${brl(d.f25)}</td>
+        <td class="text-right px-4 py-3 bg-blue-900/10 font-semibold text-white">${brl(d.m25)}</td>
+        <td class="text-right px-4 py-3 text-slate-300">${brl(d.j26)}</td>
+        <td class="text-right px-4 py-3 text-slate-300">${brl(d.f26)}</td>
+        <td class="text-right px-4 py-3 bg-sky-900/10 font-semibold text-white">${brl(d.m26)}</td>
+        <td class="text-right px-4 py-3 ${varColor} font-medium">${sinal}${brl(d.varR)}</td>
+        <td class="text-right px-4 py-3">
+          <span class="${tagClass} text-xs font-bold px-2 py-0.5 rounded">${sinal}${d.varP.toFixed(1)}%</span>
+        </td>
+      </tr>`;
+  });
+
+  // ============================================================
+  // DADOS COMPLETOS — 27 CATEGORIAS (3 meses cada ano)
+  // ============================================================
+  const PRECIF_CATS = new Set([
+    "Aluguel","Contabilidade","Empréstimo Jurídico","Telefone",
+    "Codental","CHB Ambiental","Imposto Jurídico","Desp. Funcionárias","Mat. Conserv./Limpeza"
+  ]);
+
+  const DADOS_COMPLETOS = [
+    { cat: "Aluguel",                    tipo: "Fixo",        j25:3050.68, f25:3006.00, m25:3006.00, j26:3007.72, f26:2969.58, m26:2069.58 },
+    { cat: "Água",                       tipo: "Operacional", j25:  88.96, f25:   0.00, m25: 241.78, j26: 135.68, f26: 136.51, m26: 136.73 },
+    { cat: "CHB Ambiental",              tipo: "Fixo",        j25:  95.65, f25:  93.75, m25:  93.75, j26: 101.17, f26: 101.27, m26: 101.27 },
+    { cat: "Codental",                   tipo: "Fixo",        j25: 160.90, f25: 114.90, m25: 114.90, j26: 128.90, f26: 128.90, m26: 128.90 },
+    { cat: "Contabilidade",              tipo: "Fixo",        j25:1214.40, f25:1214.00, m25:   0.00, j26:1214.40, f26:1296.86, m26:   0.00 },
+    { cat: "CRO",                        tipo: "Fixo",        j25:   0.00, f25:   0.00, m25:   0.00, j26: 238.67, f26: 242.92, m26:   0.00 },
+    { cat: "Cartões de Crédito",         tipo: "Variável",    j25:   0.00, f25:   0.00, m25:   0.00, j26:   0.00, f26:   0.00, m26: 688.21 },
+    { cat: "Desp. Funcionárias",         tipo: "Pessoal",     j25:5440.59, f25:5616.92, m25:5148.56, j26:6250.16, f26:5869.27, m26:5753.27 },
+    { cat: "Empréstimo Jurídico",        tipo: "Fixo",        j25:1854.00, f25:1854.00, m25:1854.00, j26:1766.00, f26:1766.00, m26:   0.00 },
+    { cat: "Energia Elétrica",           tipo: "Operacional", j25:   0.00, f25:1237.84, m25: 234.05, j26:1343.16, f26:1032.64, m26:   0.00 },
+    { cat: "Escritório/Papelaria",       tipo: "Operacional", j25:   0.00, f25:  46.48, m25:  80.00, j26:  40.00, f26:   0.00, m26:   0.00 },
+    { cat: "Imposto Fiscal",             tipo: "Fixo",        j25:   0.00, f25:   0.00, m25:   0.00, j26: 189.94, f26:   0.00, m26:   0.00 },
+    { cat: "Imposto Jurídico",           tipo: "Pessoal",     j25: 583.49, f25: 708.05, m25: 888.67, j26:1249.95, f26:1119.07, m26: 608.52 },
+    { cat: "Infraestrutura",             tipo: "Variável",    j25:   0.00, f25: 194.00, m25: 336.90, j26: 120.00, f26:   0.00, m26:   0.00 },
+    { cat: "Internet",                   tipo: "Fixo",        j25: 168.00, f25: 139.28, m25: 306.46, j26:   0.00, f26: 296.75, m26: 290.00 },
+    { cat: "ISS",                        tipo: "Fixo",        j25: 168.79, f25: 168.79, m25:   0.00, j26:   0.00, f26: 191.04, m26:   0.00 },
+    { cat: "Juros dos Cartões",          tipo: "Variável",    j25: 800.27, f25:2823.61, m25: 331.14, j26: 825.60, f26:1210.51, m26:   0.00 },
+    { cat: "Laboratórios",               tipo: "Variável",    j25:1300.00, f25:2940.00, m25: 500.00, j26:1500.00, f26:3150.00, m26:2402.00 },
+    { cat: "Manutenção Equipamentos",    tipo: "Variável",    j25:   0.00, f25:   0.00, m25: 430.00, j26: 380.00, f26: 390.00, m26: 220.00 },
+    { cat: "Marketing/Publicidade",      tipo: "Variável",    j25:   0.00, f25:   0.00, m25:   0.00, j26: 750.00, f26:   0.00, m26: 400.00 },
+    { cat: "Mat. Conserv./Limpeza",      tipo: "Operacional", j25:  37.15, f25:  96.30, m25:   0.00, j26: 239.58, f26: 101.07, m26:  82.62 },
+    { cat: "Materiais Odontológicos",    tipo: "Variável",    j25:1407.13, f25:2007.63, m25: 951.74, j26:1715.56, f26:2737.48, m26:1546.15 },
+    { cat: "NF Prefeitura",              tipo: "Fixo",        j25:   0.00, f25:   0.00, m25:   0.00, j26:  40.87, f26:  79.80, m26:  79.80 },
+    { cat: "Porcentagem",                tipo: "Pessoal",     j25:4812.76, f25:6694.24, m25:3361.95, j26:4427.00, f26:5242.00, m26:7306.09 },
+    { cat: "SSI / SESI",                 tipo: "Fixo",        j25: 286.51, f25:   0.00, m25:   0.00, j26:   0.00, f26:   0.00, m26:   0.00 },
+    { cat: "Taxas e Desp. Diversas",     tipo: "Variável",    j25:1932.35, f25: 420.18, m25:   0.00, j26:   0.00, f26: 238.67, m26: 138.67 },
+    { cat: "Telefone",                   tipo: "Fixo",        j25: 182.09, f25: 211.74, m25:  40.84, j26: 296.45, f26:  57.50, m26:   0.00 },
+  ];
+
+  // Cores por tipo
+  const COR_TIPO = {
+    'Fixo':        { bg: 'tipo-fixo',     label: 'Fixo' },
+    'Pessoal':     { bg: 'tipo-pessoal',  label: 'Pessoal' },
+    'Operacional': { bg: 'tipo-operac',   label: 'Operac.' },
+    'Variável':    { bg: 'tipo-variavel', label: 'Variável' },
+  };
+
+  let filtroDespAtivo = 'todas';
+
+  function filtrarDespesas(filtro) {
+    filtroDespAtivo = filtro;
+    document.querySelectorAll('.btn-desp').forEach(b => {
+      b.classList.remove('active-desp', 'bg-[#0EA5E9]', 'text-white');
+      b.classList.add('bg-slate-700', 'text-slate-300');
+    });
+    event.target.classList.add('active-desp');
+    event.target.classList.remove('bg-slate-700', 'text-slate-300');
+    renderTabelaCompleta(filtro);
+  }
+
+  function renderTabelaCompleta(filtro) {
+    const tb = document.getElementById('tabelaCompleta');
+    if (!tb) return;
+    tb.innerHTML = '';
+
+    const lista = filtro === 'todas'  ? DADOS_COMPLETOS
+                : filtro === 'precif' ? DADOS_COMPLETOS.filter(d => PRECIF_CATS.has(d.cat))
+                : DADOS_COMPLETOS.filter(d => d.tipo === filtro);
+
+    let sj25=0, sf25=0, sm25=0, sj26=0, sf26=0, sm26=0;
+
+    lista.forEach((d, i) => {
+      const t25 = d.j25 + d.f25 + d.m25;
+      const t26 = d.j26 + d.f26 + d.m26;
+      const varPct = t25 > 0 ? (t26/t25 - 1) * 100 : null;
+      const isPrecif = PRECIF_CATS.has(d.cat);
+      const corTipo = COR_TIPO[d.tipo] || { bg: 'tipo-outros', label: d.tipo };
+      const isPos = varPct !== null && varPct > 0;
+      const rowBg = i % 2 === 0 ? 'bg-slate-800/20' : 'bg-transparent';
+
+      sj25+=d.j25; sf25+=d.f25; sm25+=d.m25;
+      sj26+=d.j26; sf26+=d.f26; sm26+=d.m26;
+
+      const varStr = varPct === null ? '—'
+                   : (isPos ? '<span class="text-red-400 font-semibold">+' + varPct.toFixed(1) + '%</span>'
+                             : '<span class="text-emerald-400 font-semibold">' + varPct.toFixed(1) + '%</span>');
+
+      tb.innerHTML += `<tr class="${rowBg} hover:bg-slate-700/20 border-b border-slate-700/20 text-xs">
+        <td class="px-4 py-2 text-slate-200 font-medium whitespace-nowrap">
+          ${d.cat}${isPrecif ? ' <span class="precif-badge">&#128274;</span>' : ''}
+        </td>
+        <td class="text-center px-2 py-2"><span class="${corTipo.bg} text-[10px] font-semibold px-1.5 py-0.5 rounded">${corTipo.label}</span></td>
+        <td class="text-right px-3 py-2 bg-slate-800/30 text-slate-400">${d.j25 ? brl(d.j25) : '<span class="text-slate-600">—</span>'}</td>
+        <td class="text-right px-3 py-2 bg-slate-800/30 text-slate-400">${d.f25 ? brl(d.f25) : '<span class="text-slate-600">—</span>'}</td>
+        <td class="text-right px-3 py-2 bg-slate-800/30 text-slate-400">${d.m25 ? brl(d.m25) : '<span class="text-slate-600">—</span>'}</td>
+        <td class="text-right px-3 py-2 bg-sky-900/20 text-[#0EA5E9] font-bold">${brl(t25)}</td>
+        <td class="text-right px-3 py-2 text-slate-300">${d.j26 ? brl(d.j26) : '<span class="text-slate-600">—</span>'}</td>
+        <td class="text-right px-3 py-2 text-slate-300">${d.f26 ? brl(d.f26) : '<span class="text-slate-600">—</span>'}</td>
+        <td class="text-right px-3 py-2 text-slate-300">${d.m26 ? brl(d.m26) : '<span class="text-slate-600">—</span>'}</td>
+        <td class="text-right px-3 py-2 bg-sky-900/30 text-[#38bdf8] font-bold">${brl(t26)}</td>
+        <td class="text-right px-3 py-2">${varStr}</td>
+      </tr>`;
+    });
+
+    // Totais no footer
+    const st25 = sj25+sf25+sm25, st26 = sj26+sf26+sm26;
+    const svPct = st25 > 0 ? (st26/st25-1)*100 : 0;
+    const svStr = svPct > 0 ? `<span class="text-red-400">+${svPct.toFixed(1)}%</span>`
+                             : `<span class="text-emerald-400">${svPct.toFixed(1)}%</span>`;
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.innerHTML = v; };
+    set('ft-j25', brl(sj25)); set('ft-f25', brl(sf25)); set('ft-m25', brl(sm25));
+    set('ft-t25', brl(st25));
+    set('ft-j26', brl(sj26)); set('ft-f26', brl(sf26)); set('ft-m26', brl(sm26));
+    set('ft-t26', brl(st26));
+    set('ft-var', svStr);
+  }
+
+  renderTabelaCompleta('todas');
+
+  // ============================================================
+  // TABELA DE PREÇOS
+  // ============================================================
+  const PRECOS = [
+    { grupo: "Extrações",      proc: "Exodontia Simples",                  atual: 200   },
+    { grupo: "Extrações",      proc: "Exodontia Siso Superiores",          atual: 275   },
+    { grupo: "Extrações",      proc: "Exodontia Siso Inferior",            atual: 350   },
+    { grupo: "Prótese",        proc: "Coroa Artglass / Cerômero",          atual: 600   },
+    { grupo: "Prótese",        proc: "Coroa de Cerâmica Pura",             atual: 1200  },
+    { grupo: "Prótese",        proc: "Pino de Fibra de Vidro",             atual: 100   },
+    { grupo: "Prótese",        proc: "Adesiva (2 rest. + 1 suspensa)",     atual: 1100  },
+    { grupo: "Prótese",        proc: "Fixa 2 ou 3 elementos",              atual: 1500  },
+    { grupo: "Prótese",        proc: "Restaurado de Resina (protético)",   atual: 500   },
+    { grupo: "Prótese",        proc: "Inlay / Onlay de Porcelana",         atual: 1000  },
+    { grupo: "Prótese",        proc: "PT (Prótese Total)",                 atual: 1200  },
+    { grupo: "Prótese",        proc: "PPR",                                atual: 1200  },
+    { grupo: "Aparelhos",      proc: "Manutenção",                         atual: 100   },
+    { grupo: "Aparelhos",      proc: "Autoligado",                         atual: 700   },
+    { grupo: "Aparelhos",      proc: "Estético",                           atual: 600   },
+    { grupo: "Aparelhos",      proc: "Metálico",                           atual: 300   },
+    { grupo: "Aparelhos",      proc: "Contenção Móvel",                    atual: 350   },
+    { grupo: "Aparelhos",      proc: "Alinhador",                          atual: 250   },
+    { grupo: "Implante",       proc: "Cirurgia de Implante",               atual: 1200  },
+    { grupo: "Implante",       proc: "PSI",                                atual: 1300  },
+    { grupo: "Endodontia",     proc: "Canal Molar",                        atual: 950   },
+    { grupo: "Endodontia",     proc: "Canal Pré-molar",                    atual: 850   },
+    { grupo: "Endodontia",     proc: "Canal Incisivo",                     atual: 850   },
+    { grupo: "Clareamento",    proc: "1 Sessão",                           atual: 350   },
+    { grupo: "Clareamento",    proc: "Caseiro",                            atual: 400   },
+    { grupo: "Clareamento",    proc: "Completo (2 sessões + caseiro)",     atual: 1000  },
+    { grupo: "Facetas/Lentes", proc: "Faceta em Resina",                   atual: 275   },
+    { grupo: "Facetas/Lentes", proc: "Lente de Porcelana",                 atual: 1200  },
+    { grupo: "Restaurações",   proc: "Restauração Simples",                atual: 140   },
+    { grupo: "Restaurações",   proc: "Restauração de Resina",              atual: 225   },
+    { grupo: "Outros",         proc: "Profilaxia + Raspagem",              atual: 250   },
+  ];
+
+  // Arredondamento inteligente
+  function arredondar(v) {
+    if (v < 150)  return Math.round(v / 5) * 5;
+    if (v < 300)  return Math.round(v / 10) * 10;
+    if (v < 600)  return Math.round(v / 25) * 25;
+    return        Math.round(v / 50) * 50;
+  }
+
+  // Pré-calcular análise fixa (5%)
+  PRECOS.forEach(p => {
+    p.calc5 = p.atual * 1.05;
+    p.sug5  = arredondar(p.calc5);
+    p.diff5 = p.sug5 - p.atual;
+  });
+
+  const CORES_GRUPO = {
+    'Extrações':      '#164e63',
+    'Prótese':        '#4c1d95',
+    'Aparelhos':      '#14532d',
+    'Implante':       '#7c2d12',
+    'Endodontia':     '#1e3a5f',
+    'Clareamento':    '#3b0764',
+    'Facetas/Lentes': '#831843',
+    'Restaurações':   '#064e3b',
+    'Outros':         '#1c1917',
+  };
+
+  // Estado global da simulação
+  let simPct = 5;
+  let filtroAtivo = 'todos';
+
+  function renderTabelaPrecos(filtro, pct) {
+    filtro = filtro ?? filtroAtivo;
+    pct    = pct    ?? simPct;
+    filtroAtivo = filtro;
+
+    const mult = 1 + pct / 100;
+    const tb = document.getElementById('tabelaPrecos');
+    tb.innerHTML = '';
+    let grupoAtual = '';
+
+    PRECOS.forEach((p, i) => {
+      if (filtro !== 'todos' && p.grupo !== filtro) return;
+      const corGrupo = CORES_GRUPO[p.grupo] || '#1e293b';
+      const mostrarGrupo = p.grupo !== grupoAtual;
+      grupoAtual = p.grupo;
+      const rowBg = i % 2 === 0 ? 'bg-slate-800/20' : 'bg-transparent';
+
+      const simCalc = p.atual * mult;
+      const simSug  = arredondar(simCalc);
+      const simDiff = simSug - p.atual;
+      const diffVs5 = simSug - p.sug5;
+
+      // Cor do delta simulação vs análise
+      let deltaClass = 'text-slate-400';
+      let deltaSign  = '';
+      if (diffVs5 > 0) { deltaClass = 'text-amber-400'; deltaSign = '+'; }
+      else if (diffVs5 < 0) { deltaClass = 'text-emerald-400'; deltaSign = ''; }
+
+      tb.innerHTML += `
+        <tr class="${rowBg} hover:bg-slate-700/30 transition-colors border-b border-slate-700/20">
+          <td class="px-5 py-2.5">
+            ${mostrarGrupo ? `<span style="background:${corGrupo}" class="text-white text-xs font-bold px-2.5 py-1 rounded-full">${p.grupo}</span>` : ''}
+          </td>
+          <td class="px-4 py-2.5 text-slate-200 font-medium">${p.proc}</td>
+          <td class="text-right px-4 py-2.5 text-slate-400">${brl(p.atual)}</td>
+          <td class="text-right px-4 py-2.5 col-analise">
+            <span class="text-[#38bdf8] font-bold text-sm">${brl(p.sug5)}</span>
+            <span class="block text-[#0EA5E9]/50 text-[10px]">+${brl(p.diff5)}</span>
+          </td>
+          <td class="text-right px-4 py-2.5 col-sim">
+            <span class="text-amber-400 font-bold text-sm">${brl(simSug)}</span>
+            <span class="block text-amber-500/50 text-[10px]">+${brl(simDiff)}</span>
+          </td>
+          <td class="text-right px-4 py-2.5 col-sim">
+            <span class="${deltaClass} text-xs font-semibold">${deltaSign}${brl(diffVs5)}</span>
+          </td>
+        </tr>`;
+    });
+  }
+
+  function filtrarGrupo(grupo) {
+    document.querySelectorAll('.btn-filtro').forEach(b => {
+      b.classList.remove('bg-[#0EA5E9]', 'text-white');
+      b.classList.add('bg-slate-700', 'text-slate-300');
+    });
+    event.target.classList.add('bg-[#0EA5E9]', 'text-white');
+    event.target.classList.remove('bg-slate-700', 'text-slate-300');
+    renderTabelaPrecos(grupo, simPct);
+  }
+
+  renderTabelaPrecos('todos', 5);
+
+  // ============================================================
+  // SIMULADOR — LÓGICA COMPLETA
+  // ============================================================
+
+  const SOMA_ATUAL = PRECOS.reduce((s, p) => s + p.atual, 0);
+  const SOMA_5PCT  = PRECOS.reduce((s, p) => s + p.sug5, 0);
+
+  function calcSomaSim(pct) {
+    const mult = 1 + pct / 100;
+    return PRECOS.reduce((s, p) => s + arredondar(p.atual * mult), 0);
+  }
+
+  function atualizarSimulador(pct) {
+    simPct = pct;
+    const mult = 1 + pct / 100;
+    const somaSim  = calcSomaSim(pct);
+    const ganhoSim = somaSim - SOMA_ATUAL;
+    const ganho5   = SOMA_5PCT - SOMA_ATUAL;
+    const difVs5   = somaSim - SOMA_5PCT;
+
+    // Display do valor
+    const pctStr = pct.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+    document.getElementById('simValDisplay').textContent = pctStr;
+    document.getElementById('simPctDisplay').textContent = pctStr;
+    document.getElementById('badge-sim').textContent     = 'Simulação: ' + pctStr;
+    document.getElementById('resumoSimPct').textContent  = pctStr;
+    document.getElementById('thSimCol').textContent      = 'Simulação ' + pctStr;
+
+    // Cards de resumo
+    document.getElementById('somaAnalise').textContent = brl(SOMA_5PCT);
+    document.getElementById('ganhoAnalise').textContent = '+' + brl(ganho5);
+    document.getElementById('somaSim').textContent     = brl(somaSim);
+    document.getElementById('ganhoSim').textContent    = '+' + brl(ganhoSim);
+
+    const difEl = document.getElementById('difVsAnalise');
+    const difDelta = document.getElementById('resumoDelta');
+    if (difVs5 >= 0) {
+      difEl.textContent   = '+' + brl(difVs5);
+      difEl.className     = 'font-bold text-amber-400';
+      difDelta.textContent = '+' + brl(difVs5);
+      difDelta.className   = 'text-amber-400 text-2xl font-bold';
+    } else {
+      difEl.textContent   = '-' + brl(Math.abs(difVs5));
+      difEl.className     = 'font-bold text-emerald-400';
+      difDelta.textContent = '-' + brl(Math.abs(difVs5));
+      difDelta.className   = 'text-emerald-400 text-2xl font-bold';
+    }
+
+    // Slider visual gradient
+    const slider = document.getElementById('sliderSim');
+    const pctPos = (pct / 30 * 100).toFixed(1) + '%';
+    slider.style.setProperty('--val', pctPos);
+    slider.style.background = `linear-gradient(to right, #f59e0b ${pctPos}, #334155 ${pctPos})`;
+
+    // Sync número
+    document.getElementById('inputSimNum').value = pct;
+
+    // Presets: destacar o ativo
+    document.querySelectorAll('.preset-btn').forEach(b => {
+      const val = parseFloat(b.textContent);
+      if (val === pct) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+
+    // Barras de comparação por grupo
+    renderBarrasGrupo(pct);
+
+    // Atualizar tabela de preços
+    renderTabelaPrecos(filtroAtivo, pct);
+
+    // Atualizar Faturamento Simulado
+    atualizarFaturamento(pct);
+  }
+
+  // ============================================================
+  // FATURAMENTO SIMULADO (NOVIDADE)
+  // ============================================================
+  const FATURAMENTO_REAL = [
+    { mes: 'Janeiro',  procs: 77,  real: 26396.13 },
+    { mes: 'Fevereiro', procs: 105, real: 36462.71 },
+    { mes: 'Março *',  procs: 71,  real: 24711.66 }   // * parcial ate 25/03
+  ];
+  const FAT_TOTAL_REAL = FATURAMENTO_REAL.reduce((s, m) => s + m.real, 0);
+  const FAT_MEDIA_MES  = FAT_TOTAL_REAL / FATURAMENTO_REAL.length;        // ~29190
+  const FAT_PROJ_SEM   = FAT_TOTAL_REAL + FAT_MEDIA_MES * 9;              // ~350280
+
+  function atualizarFaturamento(pct) {
+    const mult   = 1 + pct / 100;
+    const pctStr = pct.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+    // Labels
+    document.getElementById('txtFatSimPct').textContent = pctStr;
+    document.getElementById('lblFatSimPct').textContent = 'Reajuste: ' + pctStr;
+    // Tabela mensal
+    let totSim = 0;
+    let htmlTb = '';
+    FATURAMENTO_REAL.forEach((m, i) => {
+      const sim = m.real * mult;
+      const dif = sim - m.real;
+      totSim += sim;
+      const rowBg = i % 2 === 0 ? 'bg-slate-800/30' : 'bg-transparent';
+      htmlTb += '<tr class="' + rowBg + ' border-b border-slate-700/30 hover:bg-slate-800/50">'
+        + '<td class="px-4 py-3 text-slate-300 font-medium">' + m.mes + '</td>'
+        + '<td class="text-center px-4 py-3 text-slate-400">' + m.procs + '</td>'
+        + '<td class="text-right px-4 py-3 text-slate-300 font-medium">' + brl(m.real) + '</td>'
+        + '<td class="text-right px-4 py-3 text-amber-400 font-bold bg-amber-500/5">' + brl(sim) + '</td>'
+        + '<td class="text-right px-4 py-3 text-emerald-400 font-bold bg-emerald-500/5">+' + brl(dif) + '</td>'
+        + '</tr>';
+    });
+    const totDif   = totSim - FAT_TOTAL_REAL;
+    const ganhoMes = totDif / FATURAMENTO_REAL.length;
+    const projAno  = FAT_TOTAL_REAL + FAT_MEDIA_MES * 9 * mult;
+    const ganhoAno = projAno - FAT_PROJ_SEM;
+    // DOM updates
+    document.getElementById('tbFaturamento').innerHTML   = htmlTb;
+    document.getElementById('tbFatTotSim').textContent   = brl(totSim);
+    document.getElementById('tbFatTotDif').textContent   = '+' + brl(totDif);
+    document.getElementById('fatSimTotal').textContent   = brl(totSim);
+    document.getElementById('valFatGanho').textContent   = '+' + brl(totDif);
+    document.getElementById('fatMediaSim').textContent   = brl(FAT_MEDIA_MES * mult);
+    document.getElementById('valFatGanhoMes').textContent = brl(ganhoMes);
+    document.getElementById('fatProjecaoAno').textContent = brl(projAno);
+    document.getElementById('valFatGanhoAno').textContent = '+' + brl(ganhoAno);
+  }
+
+  function renderBarrasGrupo(pct) {
+    const grupos = [...new Set(PRECOS.map(p => p.grupo))];
+    const container = document.getElementById('barrasComparacao');
+    container.innerHTML = '';
+
+    grupos.forEach(g => {
+      const itens = PRECOS.filter(p => p.grupo === g);
+      const soma5   = itens.reduce((s, p) => s + p.sug5, 0);
+      const somaS   = itens.reduce((s, p) => s + arredondar(p.atual * (1 + pct/100)), 0);
+      const diff    = somaS - soma5;
+      const sinal   = diff >= 0 ? '+' : '';
+      const cor     = diff >= 0 ? '#f59e0b' : '#34d399';
+      // barra de 0-30%, proporcional ao máximo do grupo
+      const pctBar5  = (5 / 30 * 100).toFixed(0);
+      const pctBarS  = (pct / 30 * 100).toFixed(0);
+
+      container.innerHTML += `
+        <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-700/30">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-slate-300 text-xs font-semibold">${g}</span>
+            <span class="text-xs font-bold" style="color:${cor}">${sinal}${brl(diff)}</span>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-[#0EA5E9] w-14 shrink-0">Análise 5%</span>
+              <div class="flex-1 bg-slate-800 rounded-full h-1.5">
+                <div class="h-1.5 rounded-full bg-[#0EA5E9]" style="width:${pctBar5}%"></div>
+              </div>
+              <span class="text-[10px] text-[#0EA5E9] w-20 text-right shrink-0">${brl(soma5)}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-amber-400 w-14 shrink-0">Sim. ${pct}%</span>
+              <div class="flex-1 bg-slate-800 rounded-full h-1.5">
+                <div class="h-1.5 rounded-full bg-amber-400 transition-all duration-300" style="width:${pctBarS}%"></div>
+              </div>
+              <span class="text-[10px] text-amber-400 w-20 text-right shrink-0">${brl(somaS)}</span>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Eventos do slider
+  document.getElementById('sliderSim').addEventListener('input', function() {
+    atualizarSimulador(parseFloat(this.value));
+  });
+
+  // Evento do input numérico
+  document.getElementById('inputSimNum').addEventListener('input', function() {
+    let v = parseFloat(this.value);
+    if (isNaN(v)) return;
+    v = Math.max(0, Math.min(50, v));
+    const slider = document.getElementById('sliderSim');
+    slider.value = Math.min(v, 30); // slider vai até 30, input vai até 50
+    atualizarSimulador(v);
+  });
+
+  function setPreset(pct) {
+    document.getElementById('sliderSim').value = pct;
+    atualizarSimulador(pct);
+  }
+
+  // Inicializar simulador
+  atualizarSimulador(5);
+
+  // ============================================================
+  // FORMATAÇÃO
+  // ============================================================
+  function brl(v) {
+    return 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ============================================================
+  // GRÁFICO 1 — BARRAS AGRUPADAS POR CATEGORIA
+  // ============================================================
+  const labelscat = DADOS.map(d => {
+    const words = d.cat.split(' ');
+    return words.length > 2 ? [words.slice(0, Math.ceil(words.length/2)).join(' '), words.slice(Math.ceil(words.length/2)).join(' ')] : d.cat;
+  });
+
+  new Chart(document.getElementById('chartBarCategoria'), {
+    type: 'bar',
+    data: {
+      labels: labelscat,
+      datasets: [
+        {
+          label: '2025 (Média)',
+          data: DADOS.map(d => Math.round(d.m25)),
+          backgroundColor: '#1B3A6B',
+          borderRadius: 4,
+          borderSkipped: false,
+        },
+        {
+          label: '2026 (Média)',
+          data: DADOS.map(d => Math.round(d.m26)),
+          backgroundColor: '#0EA5E9',
+          borderRadius: 4,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#94a3b8', font: { size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(148,163,184,0.1)', drawBorder: false },
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 10 },
+            callback: v => 'R$' + (v >= 1000 ? (v/1000).toFixed(1) + 'k' : v)
+          }
+        }
+      }
+    }
+  });
+
+  // ============================================================
+  // GRÁFICO 2 — VARIAÇÃO %
+  // ============================================================
+  const varColors = DADOS.map(d => d.varP > 0 ? '#f87171' : '#34d399');
+
+  new Chart(document.getElementById('chartVarPct'), {
+    type: 'bar',
+    data: {
+      labels: DADOS.map(d => {
+        const w = d.cat.split(' ');
+        return w.length > 2 ? [w[0] + ' ' + w[1], w.slice(2).join(' ')] : d.cat;
+      }),
+      datasets: [{
+        label: 'Variação %',
+        data: DADOS.map(d => parseFloat(d.varP.toFixed(1))),
+        backgroundColor: varColors,
+        borderRadius: 3,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.raw > 0 ? '+' : ''}${ctx.raw}%`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(148,163,184,0.1)', drawBorder: false },
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 10 },
+            callback: v => v + '%'
+          }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#94a3b8', font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  // ============================================================
+  // GRÁFICO 3 — TOTAIS MENSAIS
+  // ============================================================
+  const totaisMensais = {
+    'Jan/25': DADOS.reduce((s, d) => s + d.j25, 0),
+    'Fev/25': DADOS.reduce((s, d) => s + d.f25, 0),
+    'Jan/26': DADOS.reduce((s, d) => s + d.j26, 0),
+    'Fev/26': DADOS.reduce((s, d) => s + d.f26, 0),
+  };
+
+  new Chart(document.getElementById('chartMensal'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(totaisMensais),
+      datasets: [{
+        label: 'Total Comparável',
+        data: Object.values(totaisMensais).map(v => Math.round(v)),
+        backgroundColor: ['#1B3A6B', '#1B3A6B', '#0EA5E9', '#0EA5E9'],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` Total: R$ ${ctx.raw.toLocaleString('pt-BR')}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#94a3b8', font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(148,163,184,0.08)' },
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 10 },
+            callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k'
+          },
+          min: 10000,
+        }
+      }
+    }
+  });
+
+  // ============================================================
+  // SIDEBAR SCROLL SPY
+  // ============================================================
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.sidebar-link');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    });
+    links.forEach(l => {
+      l.classList.remove('active');
+      if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+    });
+  });
+  </script>
+</body>
+</html>
